@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test, login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
+from django.urls import reverse_lazy
 
 from .forms import LoginForm, RegisterForm
 
@@ -44,11 +45,11 @@ def register_page(request):
 
     return render(request, 'users/login_register.html', context=context)
 
-@login_required(login_url='login/')
+@login_required(login_url=reverse_lazy('login'))
 def logout_page(request):
     logout(request)
     return redirect('/')
 
-@login_required(login_url='login/')
+@login_required(login_url=reverse_lazy('login'))
 def feed_page(request):
     return render(request, 'feed.html')

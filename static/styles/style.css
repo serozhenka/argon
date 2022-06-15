@@ -1,6 +1,7 @@
 :root {
     --main-bg-color: #f2f2f2;
     --gray-color: #bebebe;
+    --semi-gray-color: #818181;
     --dark-gray-color: #3f3f3f;
     --link-color: #19a5e8;
     --hover-link-color: #0f6a94;
@@ -14,6 +15,10 @@ body {
 
 .gray-color {
     color: var(--gray-color);
+}
+
+.black-color {
+    color: black;
 }
 
 .link-color {
@@ -50,3 +55,16 @@ body {
 }
 
 /* End of authentication page */
+
+/* navbar */
+
+.fa {
+    transition: all .5s;
+    color: var(--dark-gray-color);
+}
+
+.fa:hover {
+    color: var(--semi-gray-color);
+}
+
+/* end of navbar */
