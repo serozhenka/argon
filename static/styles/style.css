@@ -1,0 +1,52 @@
+:root {
+    --main-bg-color: #f2f2f2;
+    --gray-color: #bebebe;
+    --dark-gray-color: #3f3f3f;
+    --link-color: #19a5e8;
+    --hover-link-color: #0f6a94;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--main-bg-color)!important;
+}
+
+.gray-color {
+    color: var(--gray-color);
+}
+
+.link-color {
+    color: var(--link-color);
+}
+
+.link {
+    text-decoration: none;
+    transition: all .5s;
+}
+
+.link:hover {
+    color: var(--hover-link-color);
+}
+
+.header-font {
+    font-family: 'Dancing Script', cursive;
+}
+
+/* Authentication page */
+
+.auth-container {
+    /*border: 1px solid #808080;*/
+    border-radius: 5px;
+    min-height: 200px;
+    height: 70vh;
+    box-shadow: 0 0 5px #bebebe;
+}
+
+.or-line {
+    background-color: var(--gray-color);
+    flex-grow: 1;
+    height: 1px;
+}
+
+/* End of authentication page */
