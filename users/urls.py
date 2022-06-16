@@ -44,4 +44,9 @@ urlpatterns = [
     path('<str:username>/', views.account_page, name='account'),
     path('<str:username>/edit/', views.account_edit_page, name='account-edit'),
     path('<str:username>/edit/crop-image/', views.crop_image, name='crop-image'),
+
+    path('<str:username>/edit/privacy-security/', views.privacy_and_security_page, name='privacy-security'),
+    path('<str:username>/edit/privacy-security/status-change/',
+         views.change_user_privacy_status, name='privacy-security-status-change',
+     ),
 ]

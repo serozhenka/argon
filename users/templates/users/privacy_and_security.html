@@ -1,0 +1,41 @@
+{% extends 'snippets/dashboard.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+
+    <div class="col-11 col-md-8 mx-auto">
+        <div class="text-center h2 mb-3">Account Privacy</div>
+
+        <div class="d-flex align-items-center">
+            <div class="h4">Public</div>
+            <div class="form-check form-switch d-inline-block ps-0">
+                <input class="form-check-input h3 ms-3 disable-focus" type="checkbox" role="switch" id="flexSwitchCheckDefault" {% if request.user.is_public %}checked{% endif %}>
+{#                <label class="form-check-label h3" for="flexSwitchCheckDefault">Public</label>#}
+            </div>
+        </div>
+
+        <small class="text-muted">
+            When your account is not public, only people you approve can see your photos and videos on Instagram. Your existing followers won't be affected.
+        </small>
+
+    </div>
+
+    <script>
+        $('#flexSwitchCheckDefault').on('change.bootstrapSwitch', function (event) {
+          $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'account:privacy-security-status-change' username=request.user.username %}",
+            timeout: 10 * 1000,
+            data: {
+              "csrfmiddlewaretoken": "{{ csrf_token }}",
+              "is_public": event.target.checked
+            },
+            error: function(data) {
+              console.log(data)
+            }
+          })
+        })
+    </script>
+
+{% endblock dashboard_content %}

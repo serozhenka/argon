@@ -104,6 +104,33 @@ def account_edit_page(request, username):
     return render(request, 'users/edit_account.html', context=context)
 
 @login_required(login_url=reverse_lazy('account:login'))
+def privacy_and_security_page(request, username):
+    account, passes = user_exists_and_is_account_owner(request, username)
+    if not passes:
+        return redirect('feed')
+
+    context = {
+        "account": account,
+        "page_name": DashboardPages.PRIVACY_AND_SECURITY,
+    }
+
+    if request.method == "GET":
+        return render(request, 'users/privacy_and_security.html', context=context)
+    
+@login_required(login_url=reverse_lazy('account:login'))
+def change_user_privacy_status(request, username):
+    account, passes = user_exists_and_is_account_owner(request, username)
+    if not passes:
+        return redirect('feed')
+
+    if request.method == "POST":
+        is_public = request.POST.get('is_public') == "true"
+        account.is_public = is_public
+        account.save()
+        return HttpResponse(json.dumps({'response_result': 'success'}), content_type='application/json')
+    return HttpResponse(json.dumps({'response_result': 'error'}), content_type='application/json')
+
+@login_required(login_url=reverse_lazy('account:login'))
 def crop_image(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:
