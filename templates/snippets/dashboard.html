@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <div class="container-fluid p-0 mt-5 mb-3">
+        <div class="col-md-8 col-sm-10 col-11 mx-auto" style="box-shadow: 0 0 5px #bebebe;">
+            <div class="row justify-content-center m-0">
+                <div class="col-3 sidebar-container bg-light p-0" >
+                    {% include 'snippets/dashboard_sidebar.html' %}
+                </div>
+                <div class="col-9 dashboard-container bg-light p-4">
+
+                    {% block dashboard_content %} {% endblock dashboard_content %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

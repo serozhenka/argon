@@ -10,6 +10,17 @@ urlpatterns = [
     path('logout/', views.logout_page, name='logout'),
     path('register/', views.register_page, name='register'),
 
+    # Password change feature
+    path('password_change/', auth_views.PasswordChangeView.as_view(
+        template_name='password_reset/password_change.html',
+        success_url=reverse_lazy('account:password_change_done'),
+        extra_context={'page_name': views.DashboardPages.PASSWORD},
+    ), name='password_change'),
+    path('password_change_done/', auth_views.PasswordChangeDoneView.as_view(
+        template_name='password_reset/password_change_done.html'
+    ), name='password_change_done'),
+    # End of password change feature
+
     # Password reset feature
     path('password_reset/', auth_views.PasswordResetView.as_view(
         template_name='password_reset/password_reset_form.html',

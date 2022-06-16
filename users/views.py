@@ -9,10 +9,16 @@ from django.core import files
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, reverse
 from django.urls import reverse_lazy
+from enum import Enum
 
 from .forms import LoginForm, RegisterForm, AccountEditForm
 from .models import Account
 from .utils import user_exists_and_is_account_owner, save_temp_profile_image_from_base64String
+
+class DashboardPages(str, Enum):
+    EDIT_PROFILE = 'edit_profile'
+    PASSWORD = 'password_change'
+    PRIVACY_AND_SECURITY = 'privacy_and_security'
 
 @user_passes_test(lambda user: not user.is_authenticated, login_url='/', redirect_field_name=None)
 def login_page(request):
@@ -83,7 +89,8 @@ def account_edit_page(request, username):
 
     context = {
         "account": account,
-        "DATA_UPLOAD_MAX_MEMORY_SIZE": settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+        "DATA_UPLOAD_MAX_MEMORY_SIZE": settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
+        "page_name": DashboardPages.EDIT_PROFILE,
     }
     if request.method == "GET":
         form = AccountEditForm(instance=account)
