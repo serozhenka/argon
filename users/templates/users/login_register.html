@@ -35,7 +35,7 @@
 
                                     <div class="">
                                         {% if page == "login" %}
-                                            <form action="{% url 'login' %}" method="POST" id="login-form">
+                                            <form action="{% url 'account:login' %}" method="POST" id="login-form">
                                                 {% csrf_token %}
 
                                                 {% for field in form %}
@@ -68,12 +68,12 @@
 {#                                            <a href="#">Login through google</a>#}
                                             <div class="text-center">
                                                 New to Argon?
-                                                <a class="link link-color" href="{% url 'register' %}">Register</a>
+                                                <a class="link link-color" href="{% url 'account:register' %}">Register</a>
                                             </div>
 
                                         {% elif page == "register" %}
 
-                                            <form action="{% url 'register' %}" method="POST" id="register-form">
+                                            <form action="{% url 'account:register' %}" method="POST" id="register-form">
                                                 {% csrf_token %}
 
                                                 {% for field in form %}
@@ -109,7 +109,7 @@
 {#                                            <a href="#">Register through google</a>#}
                                             <div class="text-center">
                                                 Already have an account?
-                                                <a class="link link-color" href="{% url 'login' %}">Login</a>
+                                                <a class="link link-color" href="{% url 'account:login' %}">Login</a>
                                             </div>
 
                                         {% endif %}

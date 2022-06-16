@@ -38,6 +38,10 @@ body {
     font-family: 'Dancing Script', cursive;
 }
 
+.fs-14px {
+    font-size: 14px!important;
+}
+
 /* Authentication page */
 
 .auth-container {
@@ -68,3 +72,34 @@ body {
 }
 
 /* end of navbar */
+
+/* edit account */
+
+.sidebar-container {
+    border-radius: 5px 0 0 5px;
+    border-right: 1px solid var(--gray-color);
+    min-height: 500px;
+}
+
+.dashboard-container {
+    border-radius: 0 5px 5px 0;
+}
+
+.dashboard-sidebar > .active {
+    border-left: 3px solid var(--semi-gray-color);
+}
+
+.dashboard-sidebar > a {
+    transition: 0s;
+}
+
+.dashboard-sidebar > a:hover{
+    background-color: var(--main-bg-color);
+    border-left: 3px solid var(--gray-color);
+}
+
+/* end of edit account */
+
+.disable-focus:focus {
+    box-shadow: none!important;
+}

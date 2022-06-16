@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <div class="container-fluid p-0 mt-5">
+        <div class="col-8 mx-auto" style="box-shadow: 0 0 5px #bebebe; min-height: 500px;">
+            <div class="row justify-content-center align-items-center m-0">
+                <div class="col-3 sidebar-container bg-light p-0">
+                    {% include 'snippets/dashboard_sidebar.html' %}
+                </div>
+                <div class="col-9 dashboard-container bg-light" style="min-height: 500px;">
+                    <form action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <input class="d-block" type="file" name="image" id="id_profile_image_file_selector" onchange="readURL(this)">
+
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" name="username" value="{{ account.username }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" value="{{ account.name }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Bio</label>
+                            <textarea class="form-control" name="bio" maxlength="128">{{ account.bio }}</textarea>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

@@ -19,7 +19,7 @@ class AccountManager(BaseUserManager):
             raise ValueError('User should have valid username')
 
         email = self.normalize_email(email)
-        user = self.model(email=email, username=username, **kwargs)
+        user = self.model(email=email, username=username.lower(), **kwargs)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -41,9 +41,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
     """
 
     email: str = models.EmailField(max_length=255, unique=True)
-    username: str = models.CharField(max_length=64, unique=True)
+    username: str = models.CharField(max_length=64, unique=True, db_index=True)
     name: str = models.CharField(max_length=128, blank=True)
-    bio: str = models.TextField(max_length=512, blank=True)
+    bio: str = models.TextField(max_length=128, blank=True)
     image = models.ImageField(
         upload_to=get_profile_image_path,
         default=settings.DEFAULT_PROFILE_IMAGE_FILEPATH,

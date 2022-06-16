@@ -9,9 +9,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
 
-    path('account/', include('users.urls')),
+    path('u/', include('users.urls')),
     path('', users_views.feed_page, name='feed'),
-    # path('<str:pk>/', users_views.login_page, name='login'),
 ]
 
 if settings.DEBUG:

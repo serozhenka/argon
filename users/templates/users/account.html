@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <section class="mt-4">
+        <div class="row">
+            <div class="col-lg-6 col-md-8 col-10 mx-auto">
+                <div class="row">
+                    <div class="d-flex col-4 justify-content-center align-items-center">
+                        <div class="col col-lg-8 col-md-10">
+                           <img class="img-fluid rounded-circle w-100" src="{{ account.image.url }}" alt="user-profile-image">
+                        </div>
+                    </div>
+                    <div class="col-8">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h1 class="fw-light mb-0">{{ account.username }}</h1>
+                            {% if request.user == account %}
+                                <a href="{% url 'account:account-edit' username=request.user.username %}" class="btn btn-outline-secondary fs-14px py-0 px-3 disable-focus" style="height: 40px; line-height: 35px">
+                                        Edit profile
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="fw-bold mt-2">
+                            {{ account.name }}
+                        </div>
+                        <div class=" mt-2">
+                            {{ account.bio }}
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="col-8 mx-auto">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-center">1</div>
+                            <div class="fw-bold">post{{ 1|pluralize }}</div>
+                        </div>
+                        <div>
+                            <div class="text-center">1</div>
+                            <div class="fw-bold">follower{{ 1|pluralize }}</div>
+                        </div>
+                        <div>
+                            <div class="text-center">1</div>
+                            <div class="fw-bold">following{{ 1|pluralize }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+{% endblock content %}

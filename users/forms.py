@@ -22,6 +22,13 @@ class RegisterForm(UserCreationForm, forms.ModelForm):
         self.fields['password1'].widget.attrs['placeholder'] = 'Enter password'
         self.fields['password2'].widget.attrs['placeholder'] = 'Confirm password'
 
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if username == username.lower():
+            if all([x.isalnum() or x == '_' for x in username]):
+                return username
+        raise forms.ValidationError('Username can only contain lowercase letters, numbers and underscores')
+
 
 class LoginForm(forms.Form):
 
@@ -40,3 +47,16 @@ class LoginForm(forms.Form):
 
             if not authenticate(email=email, password=password):
                 raise forms.ValidationError('Invalid credentials')
+
+
+class AccountEditForm(forms.ModelForm):
+
+    class Meta:
+        model = Account
+        fields = ('username', 'name', 'bio', 'image', 'is_public')
+        labels = {'password2': 'Confirm password'}
+
+    # def __init__(self, *args, **kwargs):
+    #     super(AccountEditForm, self).__init__(*args, **kwargs)
+    #     for _, field in self.fields.items():
+    #         field.widget.attrs.update({'class': 'form-control'})
