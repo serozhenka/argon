@@ -3,17 +3,29 @@
 
 {% block content %}
 
-    <div class="container-fluid p-0 mt-5">
-        <div class="col-8 mx-auto" style="box-shadow: 0 0 5px #bebebe; min-height: 500px;">
-            <div class="row justify-content-center align-items-center m-0">
-                <div class="col-3 sidebar-container bg-light p-0">
+    <div class="container-fluid p-0 mt-5 mb-3">
+        <div class="col-md-8 col-sm-10 col-11 mx-auto" style="box-shadow: 0 0 5px #bebebe;">
+            <div class="row justify-content-center m-0">
+                <div class="col-3 sidebar-container bg-light p-0" >
                     {% include 'snippets/dashboard_sidebar.html' %}
                 </div>
-                <div class="col-9 dashboard-container bg-light" style="min-height: 500px;">
-                    <form action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
+                <div class="col-9 dashboard-container bg-light p-4">
+                    <div id="account-image-container-helper" class="d-flex flex-column mx-auto">
+                        <div class="d-none justify-content-between" id="crop-confirm-container">
+                            <span id="crop-cancel"><i class="fa fa-xmark fs-3 text-danger"></i></span>
+                            <span id="crop-confirm"><i class="fa fa-check fs-3 text-success"></i></span>
+                        </div>
+
+                        <div id="edit-account-image-container" style="position: relative">
+                            <img id="edit-account-image" class="img-fluid rounded-circle" src="{{ account.image.url }}" alt="">
+                            <button id="edit-account-image-edit-btn" type="button" class="btn btn-secondary rounded-0 edit-image-btn disable-focus" style="opacity: 0">Edit</button>
+                        </div>
+                    </div>
+
+                    <form id="account-edit-form" action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
 
-                        <input class="d-block" type="file" name="image" id="id_profile_image_file_selector" onchange="readURL(this)">
+                        <input class="d-none" type="file" name="image" id="account-image-file-selector" accept="image/*" onchange="readURL(this)">
 
                         <div class="mb-3">
                             <label class="form-label">Username</label>
@@ -27,13 +39,169 @@
 
                         <div class="mb-3">
                             <label class="form-label">Bio</label>
-                            <textarea class="form-control" name="bio" maxlength="128">{{ account.bio }}</textarea>
+                            <textarea class="form-control" name="bio" maxlength="128" contentEditable rows="5">{{ account.bio }}</textarea>
                         </div>
-
                     </form>
+
+                    <div class="mb-2">
+                        {% for err in form.non_field_errors %}
+                            <div class="text-danger">
+                                <span>{{ err }}</span>
+                            </div>
+                        {% endfor %}
+                        {% for key, err_list in form.errors.items %}
+                            <div class="text-danger">
+                                <small>- {{ err_list.0 }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-grid gap-4">
+                        <button form="account-edit-form" type="submit" class="btn btn-sm btn-secondary d-block">Save</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+
+        let cropper, cropX, cropY, cropWidth, cropHeight, imageFile, base64ImageString;
+        const imageContainer = document.getElementById("edit-account-image-container")
+        const accountImage = document.getElementById("edit-account-image")
+        const editBtn = document.getElementById("edit-account-image-edit-btn")
+        const imageFileSelector = document.getElementById("account-image-file-selector")
+        const choiceButtonsContainer = document.getElementById("crop-confirm-container")
+
+        enableImageOverlay()
+
+        function readURL(input) {
+            if (input.files && input.files[0]) {
+              let fileReader = new FileReader()
+
+              fileReader.onload = function (e) {
+                imageContainerMouseOut(this)
+                disableImageOverlay()
+                let image = e.target.result
+                accountImage.src = image
+
+                cropper = new Cropper(accountImage, {
+                  aspectRatio: 1 / 1,
+                  crop(event) {
+                    setAccountImageCropProperties(
+                        image,
+                        event.detail.x, event.detail.y,
+                        event.detail.width, event.detail.height
+                    )
+                  }
+                })
+              }
+
+              fileReader.readAsDataURL(input.files[0])
+            }
+        }
+
+        function isImageSizeValid(image) {
+            let startIndex = image.indexOf('base64,') + 7
+            let base64String = image.substr(startIndex)
+            let decoded = atob(base64String)
+            return decoded.length <= "{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}" ? base64String : null;
+        }
+
+        function cropImage(image, x, y, width, height) {
+            base64ImageString = isImageSizeValid(image)
+            if (!base64ImageString) {
+              alert('Image upload size is big. Please choose smaller size image')
+              window.location.reload()
+              return null;
+            }
+
+            let requestData = {
+                "csrfmiddlewaretoken": "{{ csrf_token }}",
+                "image": base64ImageString,
+                "cropX": x,
+                "cropY": y,
+                "cropWidth": width,
+                "cropHeight": height,
+            }
+
+            $.ajax({
+              type: "POST",
+              dataType: "json",
+              url: "{% url 'account:crop-image' username=request.user.username %}",
+              data: requestData,
+              timeout: 10 * 1000,
+              success: function(data) {
+                if(data.result === "error") {
+                  alert(data.exception)
+                }
+                window.location.reload()
+              },
+              error: function(data) {
+                console.log(data)
+              },
+              complete: function(data) {
+                displayLoadingSpinner(false)
+              }
+            })
+        }
+
+        function setAccountImageCropProperties(image, x, y, width, height) {
+            [imageFile, cropX, cropY, cropWidth, cropHeight] = [image, x, y, width, height]
+        }
+
+        function enableImageOverlay() {
+            editBtn.style.cursor = 'pointer'
+            editBtn.style.transition = '.5s ease'
+
+            accountImage.style.opacity = '1'
+            accountImage.style.transition = '.5s ease'
+            accountImage.style.backfaceVisibility = 'hidden'
+            accountImage.style.cursor = 'pointer'
+
+            imageContainer.addEventListener('mouseover', imageContainerMouseOver)
+            imageContainer.addEventListener('mouseout', imageContainerMouseOut)
+            imageContainer.addEventListener('click', imageContainerMouseClick)
+        }
+
+        function disableImageOverlay() {
+            choiceButtonsContainer.classList.remove('d-none')
+            choiceButtonsContainer.classList.add('d-flex')
+
+            imageContainer.removeEventListener('mouseover', imageContainerMouseOver)
+            imageContainer.removeEventListener('mouseout', imageContainerMouseOut)
+            imageContainer.removeEventListener('click', imageContainerMouseClick)
+
+            accountImage.style.cursor = 'default'
+
+            let cancelBtn = document.getElementById('crop-cancel')
+            let confirmBtn = document.getElementById('crop-confirm')
+
+            confirmBtn.addEventListener('click', (e) => {
+              // crop image
+              displayLoadingSpinner(true)
+              cropImage(imageFile, cropX, cropY, cropWidth, cropHeight)
+            })
+
+            cancelBtn.addEventListener('click', (e) => {
+              window.location.reload();
+            })
+        }
+
+
+        // Event listeners
+        function imageContainerMouseOver() {
+          accountImage.style.opacity = '0.3'
+          editBtn.style.opacity = '1'
+        }
+
+        function imageContainerMouseOut() {
+          accountImage.style.opacity = '1'
+          editBtn.style.opacity = '0'
+        }
+
+        function imageContainerMouseClick() {
+            imageFileSelector.click()
+        }
+    </script>
 {% endblock content %}

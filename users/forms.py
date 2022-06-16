@@ -53,7 +53,7 @@ class AccountEditForm(forms.ModelForm):
 
     class Meta:
         model = Account
-        fields = ('username', 'name', 'bio', 'image', 'is_public')
+        fields = ('username', 'name', 'bio')
         labels = {'password2': 'Confirm password'}
 
     # def __init__(self, *args, **kwargs):

@@ -11,4 +11,5 @@ urlpatterns = [
 
     path('<str:username>/', views.account_page, name='account'),
     path('<str:username>/edit/', views.account_edit_page, name='account-edit'),
+    path('<str:username>/edit/crop-image/', views.crop_image, name='crop-image'),
 ]

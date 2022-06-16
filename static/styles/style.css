@@ -78,7 +78,6 @@ body {
 .sidebar-container {
     border-radius: 5px 0 0 5px;
     border-right: 1px solid var(--gray-color);
-    min-height: 500px;
 }
 
 .dashboard-container {
@@ -96,6 +95,36 @@ body {
 .dashboard-sidebar > a:hover{
     background-color: var(--main-bg-color);
     border-left: 3px solid var(--gray-color);
+}
+
+.edit-image-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+}
+
+#account-image-container-helper {
+    width: 30%;
+}
+
+@media (max-width: 992px) {
+    #account-image-container-helper {
+        width: 40%;
+    }
+}
+
+@media (max-width: 768px) {
+    #account-image-container-helper {
+        width: 50%;
+    }
+}
+
+@media (max-width: 576px) {
+    #account-image-container-helper {
+        width: 60%;
+    }
 }
 
 /* end of edit account */

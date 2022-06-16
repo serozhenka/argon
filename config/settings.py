@@ -1,3 +1,5 @@
+import os
+
 from decouple import config
 from pathlib import Path
 
@@ -124,3 +126,5 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 AUTH_USER_MODEL = 'users.Account'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
+TEMP = os.path.join(BASE_DIR, 'media/profile_images/temp')
