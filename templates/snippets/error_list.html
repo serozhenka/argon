@@ -1,0 +1,12 @@
+<div class="mb-2">
+    {% for err in form.non_field_errors %}
+        <div class="text-danger">
+            <span>{{ err }}</span>
+        </div>
+    {% endfor %}
+    {% for key, err_list in form.errors.items %}
+        <div class="text-danger">
+            <small>- {{ err_list.0 }}</small>
+        </div>
+    {% endfor %}
+</div>

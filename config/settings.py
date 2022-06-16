@@ -128,3 +128,13 @@ DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 AUTH_USER_MODEL = 'users.Account'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
 TEMP = os.path.join(BASE_DIR, 'media/profile_images/temp')
+
+# if DEBUG:
+#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# else:
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True

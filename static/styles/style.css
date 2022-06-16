@@ -44,6 +44,10 @@ body {
 
 /* Authentication page */
 
+.box-shadow {
+    box-shadow: 0 0 5px #bebebe;
+}
+
 .auth-container {
     /*border: 1px solid #808080;*/
     border-radius: 5px;
