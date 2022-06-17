@@ -123,7 +123,9 @@ def change_user_privacy_status(request, username):
     if not passes:
         return redirect('feed')
 
-    if request.method == "POST":
+    if request.method == "GET":
+        return redirect('account:privacy-security', username=request.user.username)
+    elif request.method == "POST":
         is_public = request.POST.get('is_public') == "true"
         account.is_public = is_public
         account.save()
@@ -138,7 +140,10 @@ def crop_image(request, username):
 
     payload = {}
 
-    if request.method == "POST":
+    if request.method == "GET":
+        return redirect('feed')
+
+    elif request.method == "POST":
         try:
             imageString = request.POST.get('image')
             url = save_temp_profile_image_from_base64String(imageString, account)

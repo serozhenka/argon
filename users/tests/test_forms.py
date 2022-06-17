@@ -1,17 +1,17 @@
 from django.test import TestCase
+from model_bakery import baker
 
-from users.forms import RegisterForm, LoginForm
+from users.forms import RegisterForm, LoginForm, AccountEditForm
 from users.models import Account
 
 class TestUserForms(TestCase):
 
     def setUp(self) -> None:
         self.pwd = '21b4f6bcb67f57ce9487cfbd0eb91265'
-        self.user = Account.objects.create_user(
-            email='testing@gmail.com',
-            username='testing',
-            password=self.pwd,
-        )
+        self.user = baker.make(Account)
+        self.user2 = baker.make(Account)
+        self.user.set_password(self.pwd)
+        self.user.save()
 
     def test_login_form_valid_data(self):
         form = LoginForm(data={
@@ -54,5 +54,27 @@ class TestUserForms(TestCase):
 
     def test_register_form_blank_data(self):
         form = RegisterForm(data={})
+        self.assertFalse(form.is_valid())
+        self.assertTrue(len(form.errors) > 0)
+
+    def test_account_edit_form_valid_data(self):
+        form = AccountEditForm(instance=self.user, data={
+            'username': self.user.username,
+            'name': 'maria',
+            'bio': 'mari playing',
+        })
+        self.assertTrue(form.is_valid())
+
+    def test_account_edit_form_invalid_data(self):
+        form = AccountEditForm(instance=self.user, data={
+            'username': self.user2.username,
+            'name': 'maria',
+            'bio': 'mari playing',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertTrue(len(form.errors) > 0)
+
+    def test_account_edit_form_blank_data(self):
+        form = AccountEditForm(instance=self.user, data={})
         self.assertFalse(form.is_valid())
         self.assertTrue(len(form.errors) > 0)

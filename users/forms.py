@@ -54,9 +54,3 @@ class AccountEditForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ('username', 'name', 'bio')
-        labels = {'password2': 'Confirm password'}
-
-    # def __init__(self, *args, **kwargs):
-    #     super(AccountEditForm, self).__init__(*args, **kwargs)
-    #     for _, field in self.fields.items():
-    #         field.widget.attrs.update({'class': 'form-control'})
