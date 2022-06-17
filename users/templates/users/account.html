@@ -17,8 +17,14 @@
                             <h1 class="fw-light mb-0">{{ account.username }}</h1>
                             {% if request.user == account %}
                                 <a href="{% url 'account:account-edit' username=request.user.username %}" class="btn btn-outline-secondary fs-14px py-0 px-3 disable-focus" style="height: 40px; line-height: 35px">
-                                        Edit profile
+                                    Edit profile
                                 </a>
+                            {% else %}
+                                {% if account.is_public %}
+                                    <a href="#" class="btn btn-outline-secondary fs-14px py-0 px-3 disable-focus" style="height: 40px; line-height: 35px">
+                                        Follow
+                                    </a>
+                                {% endif %}
                             {% endif %}
                         </div>
                         <div class="fw-bold mt-2">

@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect, reverse
 from django.urls import reverse_lazy
 from enum import Enum
 
+from follow.models import Following, Followers, FollowingRequest
 from .forms import LoginForm, RegisterForm, AccountEditForm
 from .models import Account
 from .utils import user_exists_and_is_account_owner, save_temp_profile_image_from_base64String
@@ -77,6 +78,10 @@ def account_page(request, username):
             account = Account.objects.get(username=username)
         except Account.DoesNotExist:
             return redirect('feed')
+
+        if not request.user == account:
+            context['following'] = Following.objects.get(user=request.user).is_following(account)
+            context['followed'] = Following.objects.get(user=account).is_following(account)
 
         context["account"] = account
         return render(request, 'users/account.html', context=context)

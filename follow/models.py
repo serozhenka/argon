@@ -16,6 +16,9 @@ class Following(models.Model):
     def __str__(self):
         return self.user.email
 
+    def is_following(self, user) -> bool:
+        return user in self.users_following.all()
+
     def add_following(self, user: settings.AUTH_USER_MODEL):
         """
         First user subscribes from second user
@@ -53,8 +56,14 @@ class Followers(models.Model):
         settings.AUTH_USER_MODEL, related_name='users_followers'
     )
 
+    class Meta:
+        verbose_name_plural = 'Followers'
+
     def __str__(self):
         return self.user.email
+
+    def is_follower(self, user) -> bool:
+        return user in self.users_followers.all()
 
     # def add_follower(self, user: settings.AUTH_USER_MODEL):
     #     if user not in self.users_followers.all():
