@@ -31,6 +31,7 @@ INSTALLED_APPS = [
 
     # internal apps
     'users.apps.UsersConfig',
+    'follow.apps.FollowConfig',
 ]
 
 MIDDLEWARE = [
