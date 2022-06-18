@@ -109,14 +109,14 @@
                             <div class="text-center">1</div>
                             <div class="fw-bold">post{{ 1|pluralize }}</div>
                         </div>
-                        <div>
+                        <a class="d-block link text-dark" href="{% url 'account:account-followers' username=account.username %}">
                             <div class="text-center">{{ followers_count }}</div>
                             <div class="fw-bold">follower{{ followers_count|pluralize }}</div>
-                        </div>
-                        <div>
+                        </a>
+                        <a class="d-block link text-dark" href="{% url 'account:account-following' username=account.username %}">
                             <div class="text-center">{{ following_count }}</div>
                             <div class="fw-bold">following{{ following_count|pluralize }}</div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>

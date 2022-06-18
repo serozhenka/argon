@@ -29,9 +29,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # external apps
+    'rest_framework',
+
     # internal apps
     'users.apps.UsersConfig',
     'follow.apps.FollowConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -139,3 +143,9 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}

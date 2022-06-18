@@ -17,11 +17,13 @@ def follow_general_view(request, username):
         return redirect('feed')
 
     elif request.method == "POST":
+        print(request.POST)
         account, passes = user_exists_and_is_not_request_user(request, username)
         if not passes:
             return redirect('feed')
 
         action = request.POST.get('action')
+        print(action)
 
         try:
             if action == "follow":

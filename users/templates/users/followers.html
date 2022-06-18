@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <section class="mt-4">
+        <div class="row mx-0">
+            <div class="col-lg-6 col-md-8 col-10 mx-auto">
+                <a href="{% url 'account:account' username=account_username %}" class="d-flex justify-content-center btn btn-sm btn-outline-secondary px-3 mb-3 w-25 mx-auto">Back</a>
+                <div class="scrollable-container box-shadow" id="followers-container" style="background-color: var(--light-gray-color)">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-none"></div>
+
+    <script>
+        let limit = 20;
+        let usersContainer = document.getElementById('followers-container')
+        let url = "{% url 'api-followers-list' username=account_username %}" + `?limit=${limit}&offset=0`
+
+        usersContainer.addEventListener('scroll', scrollListener)
+        getNextPage()
+
+        function getNextPage() {
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              url = data.next
+              if (!url) { usersContainer.removeEventListener('scroll', scrollListener) }
+              containerAppendData(data.results)
+            })
+        }
+
+        function containerAppendData(data) {
+          data.forEach(function(user) {
+            let div = document.createElement('div')
+            div.classList.add('d-flex', 'p-2')
+
+            div.innerHTML = `
+                <div class="col-1 me-3">
+                    <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="user-profile-image" id="${user.username}_image">
+                </div>
+                <div class="col-11 d-flex align-items-center justify-content-between">
+                    <div><span class="fw-bold">${user.username}</span><br/><span class="text-muted">${user.name}</span></div>
+                    <div>
+                        {% if account_username == request.user.username %}
+                            <button class="btn btn-outline-secondary btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="removeFollower(this, '${user.username}')">
+                                Remove
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            `
+            usersContainer.appendChild(div)
+            preLoadImage(user.image, `${user.username}_image`)
+          })
+        }
+
+        function scrollListener(e) {
+          if((usersContainer.scrollTop + 1) >= (usersContainer.scrollHeight - usersContainer.offsetHeight)) {
+              getNextPage()
+            }
+        }
+
+        function removeFollower(target, username) {
+          $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: {
+              'action': 'remove',
+              "csrfmiddlewaretoken": "{{ csrf_token }}",
+            },
+            url: "{% url 'follow:follow-action' username=123456789 %}".replace(123456789, username),
+            timeout: 5 * 1000,
+            success: function(data) {
+              if (data.response_result === "success") {
+                target.onclick = ""
+                target.classList.remove('btn-outline-secondary')
+                target.classList.add('btn-outline-danger')
+                target.innerText = "Removed"
+              }
+              else if (data.response_result === "error") { console.log(data) }
+            }
+           })
+        }
+
+    </script>
+{% endblock content %}

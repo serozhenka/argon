@@ -10,6 +10,8 @@ urlpatterns = [
 
     path('u/', include('users.urls')),
     path('follow/', include('follow.urls')),
+    path('api/', include('api.urls')),
+
     path('', users_views.feed_page, name='feed'),
 ]
 

@@ -158,6 +158,16 @@ def change_user_privacy_status(request, username):
     return HttpResponse(json.dumps({'response_result': 'error'}), content_type='application/json')
 
 @login_required(login_url=reverse_lazy('account:login'))
+def account_followers(request, username):
+    if request.method == "GET":
+        return render(request, 'users/followers.html', context={'account_username': username})
+
+@login_required(login_url=reverse_lazy('account:login'))
+def account_followings(request, username):
+    if request.method == "GET":
+        return render(request, 'users/followings.html', context={'account_username': username})
+
+@login_required(login_url=reverse_lazy('account:login'))
 def crop_image(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:

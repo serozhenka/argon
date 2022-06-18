@@ -1,5 +1,6 @@
 :root {
     --main-bg-color: #f2f2f2;
+    --light-gray-color: #f1f1f1;
     --gray-color: #bebebe;
     --semi-gray-color: #818181;
     --dark-gray-color: #3f3f3f;
@@ -31,7 +32,7 @@ body {
 }
 
 .link:hover {
-    color: var(--hover-link-color);
+    color: var(--hover-link-color)!important;
 }
 
 .header-font {
@@ -135,4 +136,15 @@ body {
 
 .disable-focus:focus {
     box-shadow: none!important;
+}
+
+.scrollable-container {
+    display: flex;
+    height: 500px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #fff;
+    font-size: 0.9em;
+    flex-direction: column;
 }
