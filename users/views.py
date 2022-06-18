@@ -80,8 +80,26 @@ def account_page(request, username):
             return redirect('feed')
 
         if not request.user == account:
-            context['following'] = Following.objects.get(user=request.user).is_following(account)
-            context['followed'] = Following.objects.get(user=account).is_following(account)
+
+            try:
+                friend_request = FollowingRequest.objects.get(sender=account, receiver=request.user)
+                context['incoming_request'] = friend_request.is_active
+            except FollowingRequest.DoesNotExist:
+                pass
+
+            try:
+                friend_request = FollowingRequest.objects.get(sender=request.user, receiver=account)
+                context['outgoing_request'] = friend_request.is_active
+            except FollowingRequest.DoesNotExist:
+                pass
+
+            following_model = Following.objects.get(user=request.user)
+            followers_model = Followers.objects.get(user=request.user)
+            context['is_following'] = following_model.is_following(account)
+            context['is_followed'] = Following.objects.get(user=account).is_following(request.user)
+
+            context['following_count'] = following_model.count()
+            context['followers_count'] = followers_model.count()
 
         context["account"] = account
         return render(request, 'users/account.html', context=context)

@@ -2,6 +2,7 @@ from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.db.models import QuerySet
+from django.utils import timezone
 from typing import Union, List
 
 from users.models import Account
@@ -10,50 +11,53 @@ from users.models import Account
 class Following(models.Model):
     user: Account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     users_following: Union[QuerySet, List[Account]] = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, related_name='users_following'
+        settings.AUTH_USER_MODEL, related_name='users_following', blank=True
     )
 
     def __str__(self):
         return self.user.email
 
-    def is_following(self, user) -> bool:
-        return user in self.users_following.all()
+    def count(self):
+        return self.users_following.count()
 
-    def add_following(self, user: settings.AUTH_USER_MODEL):
+    def is_following(self, other_user) -> bool:
+        return other_user in self.users_following.all()
+
+    def add_following(self, other_user: settings.AUTH_USER_MODEL):
         """
         First user subscribes from second user
             1. second user is added to first's user following list
             2. first user is added to second's user followers list
         """
 
-        if user not in self.users_following.all():
-            self.users_following.add(user)
+        if other_user not in self.users_following.all():
+            self.users_following.add(other_user)
 
-        other_user_followers = Followers.objects.get(user=user).users_followers.all()
+        ou_followers_model = Followers.objects.get(user=other_user)
 
-        if self.user not in other_user_followers.users_followers.all():
-            other_user_followers.add(self.user)
+        if self.user not in ou_followers_model.users_followers.all():
+            ou_followers_model.users_followers.add(self.user)
 
-    def remove_following(self, user: settings.AUTH_USER_MODEL):
+    def remove_following(self, other_user: settings.AUTH_USER_MODEL):
         """
         First user unsubscribes from second user
             1. second user is removed from first's user following list
             2. first user is removed from second's user followers list
         """
 
-        if user in self.users_following.all():
-            self.users_following.remove(user)
+        if other_user in self.users_following.all():
+            self.users_following.remove(other_user)
 
-        other_user_followers = Followers.objects.get(user=user).users_followers.all()
+        ou_followers_model = Followers.objects.get(user=other_user)
 
-        if self.user in other_user_followers.users_followers.all():
-            other_user_followers.remove(self.user)
+        if self.user in ou_followers_model.users_followers.all():
+            ou_followers_model.users_followers.remove(self.user)
 
 
 class Followers(models.Model):
     user: Account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     users_followers: Union[QuerySet, List[Account]] = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, related_name='users_followers'
+        settings.AUTH_USER_MODEL, related_name='users_followers', blank=True
     )
 
     class Meta:
@@ -62,27 +66,30 @@ class Followers(models.Model):
     def __str__(self):
         return self.user.email
 
-    def is_follower(self, user) -> bool:
-        return user in self.users_followers.all()
+    def count(self):
+        return self.users_followers.count()
+
+    def is_follower(self, other_user) -> bool:
+        return other_user in self.users_followers.all()
 
     # def add_follower(self, user: settings.AUTH_USER_MODEL):
     #     if user not in self.users_followers.all():
     #         self.users_followers.add(user)
 
-    def remove_follower(self, user: settings.AUTH_USER_MODEL):
+    def remove_follower(self, other_user: settings.AUTH_USER_MODEL):
         """
         First user removes second user from it's followers
             1. second user is removed from first's user followers list
             2. first user is removed from second's user following list
         """
 
-        if user in self.users_followers.all():
-            self.users_followers.remove(user)
+        if other_user in self.users_followers.all():
+            self.users_followers.remove(other_user)
 
-        other_user_following = Following.objects.get(user=user).users_following.all()
+        ou_following_model = Following.objects.get(user=other_user)
 
-        if self.user in other_user_following.users_following.all():
-            other_user_following.remove(user)
+        if self.user in ou_following_model.users_following.all():
+            ou_following_model.users_following.remove(other_user)
 
 
 class FollowingRequest(models.Model):
@@ -90,6 +97,10 @@ class FollowingRequest(models.Model):
     receiver: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='receiver')
     is_active: bool = models.BooleanField(default=True)
     created: datetime = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        self.created = timezone.now()
+        return super(FollowingRequest, self).save(*args, **kwargs)
 
     def accept(self):
         """
@@ -101,6 +112,7 @@ class FollowingRequest(models.Model):
         sender_following = Following.objects.get(user=self.sender)
         sender_following.add_following(self.receiver)
         self.is_active = False
+        self.save()
 
     def decline(self):
         """
@@ -109,6 +121,7 @@ class FollowingRequest(models.Model):
         """
 
         self.is_active = False
+        self.save()
 
     def cancel(self):
         """
@@ -117,6 +130,7 @@ class FollowingRequest(models.Model):
         """
 
         self.is_active = False
+        self.save()
 
 
 
