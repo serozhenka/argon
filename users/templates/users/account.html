@@ -28,7 +28,7 @@
 
                                         {% if incoming_request %}
                                             <li>
-                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="acceptRequest()">
+                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="generalFollowRequest('accept-request')">
                                                     <div class="me-4">Accept request</div>
                                                     <i class="fa-solid fa-check me-1 text-success"></i>
                                                 </a>
@@ -37,7 +37,7 @@
 
                                         {% if incoming_request %}
                                             <li>
-                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="declineRequest()">
+                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="generalFollowRequest('decline-request')">
                                                     <div class="me-4">Decline request</div>
                                                     <i class="fa-solid fa-xmark me-1 text-danger"></i>
                                                 </a>
@@ -47,7 +47,7 @@
 
                                         {% if is_followed %}
                                             <li>
-                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="removeFollower()">
+                                                <a class="dropdown-item d-flex justify-content-between align-items-center" onclick="generalFollowRequest('remove')">
                                                     <div class="me-4">Remove follower</div>
                                                     <i class="fa-solid fa-minus me-1 text-danger"></i>
                                                 </a>
@@ -73,68 +73,21 @@
                                 {% if account.is_public or not account.is_public %}
 
                                     {% if is_following %}
-                                        <button class="btn btn-outline-danger btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="unfollowUser()">
+                                        <button class="btn btn-outline-danger btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="generalFollowRequest('unfollow')">
                                             Unfollow
                                         </button>
                                     {% else %}
                                         {% if outgoing_request %}
-                                            <button class="btn btn-outline-danger btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="cancelRequest()">
+                                            <button class="btn btn-outline-danger btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="generalFollowRequest('cancel-request')">
                                                 Cancel Request
                                             </button>
                                         {% else %}
-                                            <button class="btn btn-primary btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="followUser()">
+                                            <button class="btn btn-primary btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="generalFollowRequest('follow')">
                                                 Follow {% if is_followed %}Back {% endif %}
                                             </button>
                                         {% endif %}
-                                    {% endif %}
 
-{#                                {% elif not account.is_public %}#}
-{#                                    <div class="dropdown">#}
-{#                                        <button class="btn btn-primary btm-sm fs-14px py-1 px-3 disable-focus dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">#}
-{#                                            {% if outgoing_request %}#}
-{#                                                Request sent#}
-{#                                            {% else %}#}
-{#                                                Follow#}
-{#                                            {% endif %}#}
-{#                                        </button>#}
-{#                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">#}
-{#                                            {% if not outgoing_request %}#}
-{#                                                <li>#}
-{#                                                    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">#}
-{#                                                        <div class="me-4">Follow</div>#}
-{#                                                        <i class="fa-solid fa-plus me-1 text-primary"></i>#}
-{#                                                    </a>#}
-{#                                                </li>#}
-{#                                            {% endif %}#}
-{#    #}
-{#                                            {% if incoming_request %}#}
-{#                                                <li>#}
-{#                                                    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">#}
-{#                                                        <div>Accept request</div>#}
-{#                                                        <i class="fa-solid fa-check me-1 text-success" style="width: 20px"></i>#}
-{#                                                    </a>#}
-{#                                                </li>#}
-{#                                            {% endif %}#}
-{#    #}
-{#                                            {% if outgoing_request %}#}
-{#                                                <li>#}
-{#                                                    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">#}
-{#                                                        <div class="me-4">Cancel request</div>#}
-{#                                                        <i class="fa-solid fa-xmark me-1 text-danger"></i>#}
-{#                                                    </a>#}
-{#                                                </li>#}
-{#                                            {% endif %}#}
-{#    #}
-{#                                            {% if is_followed %}#}
-{#                                                <li>#}
-{#                                                    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">#}
-{#                                                        <div class="me-4">Remove follower</div>#}
-{#                                                        <i class="fa-solid fa-minus me-1 text-danger"></i>#}
-{#                                                    </a>#}
-{#                                                </li>#}
-{#                                            {% endif %}#}
-{#                                        </ul>#}
-{#                                    </div>#}
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         {% endif %}
@@ -171,94 +124,23 @@
     </section>
 
     <script>
-        function followUser() {
+
+        function generalFollowRequest(action) {
           $.ajax({
             type: "POST",
             dataType: "json",
             data: {
+              'action': action,
               "csrfmiddlewaretoken": "{{ csrf_token }}",
             },
-            url: "{% url 'follow:follow-user' username=account.username %}",
+            url: "{% url 'follow:follow-action' username=account.username %}",
             timeout: 5 * 1000,
             success: function(data) {
               if (data.response_result === "success") { window.location.reload() }
+              else if (data.response_result === "error") { console.log(data) }
             }
           })
         }
 
-        function unfollowUser() {
-          $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: {
-              "csrfmiddlewaretoken": "{{ csrf_token }}",
-            },
-            url: "{% url 'follow:unfollow-user' username=account.username %}",
-            timeout: 5000,
-            success: function(data) {
-              if (data.response_result === "success") { window.location.reload() }
-            }
-          })
-        }
-
-        function removeFollower() {
-          $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: {
-              "csrfmiddlewaretoken": "{{ csrf_token }}",
-            },
-            url: "{% url 'follow:remove-follower' username=account.username %}",
-            timeout: 5 * 1000,
-            success: function(data) {
-              if (data.response_result === "success") { window.location.reload() }
-            }
-          })
-        }
-
-        function cancelRequest() {
-          $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: {
-              "csrfmiddlewaretoken": "{{ csrf_token }}",
-            },
-            url: "{% url 'follow:cancel-following-request' username=account.username %}",
-            timeout: 5 * 1000,
-            success: function(data) {
-              if (data.response_result === "success") { window.location.reload() }
-            }
-          })
-        }
-
-        function acceptRequest() {
-          $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: {
-              "csrfmiddlewaretoken": "{{ csrf_token }}",
-            },
-            url: "{% url 'follow:accept-following-request' username=account.username %}",
-            timeout: 5 * 1000,
-            success: function(data) {
-              if (data.response_result === "success") { window.location.reload() }
-            }
-          })
-        }
-
-        function declineRequest() {
-          $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: {
-              "csrfmiddlewaretoken": "{{ csrf_token }}",
-            },
-            url: "{% url 'follow:decline-following-request' username=account.username %}",
-            timeout: 5 * 1000,
-            success: function(data) {
-              if (data.response_result === "success") { window.location.reload() }
-            }
-          })
-        }
     </script>
 {% endblock content %}

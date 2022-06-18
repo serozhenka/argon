@@ -79,6 +79,9 @@ def account_page(request, username):
         except Account.DoesNotExist:
             return redirect('feed')
 
+        following_model_account = Following.objects.get(user=account)
+        followers_model_account = Followers.objects.get(user=account)
+
         if not request.user == account:
 
             try:
@@ -93,13 +96,12 @@ def account_page(request, username):
             except FollowingRequest.DoesNotExist:
                 pass
 
-            following_model = Following.objects.get(user=request.user)
-            followers_model = Followers.objects.get(user=request.user)
-            context['is_following'] = following_model.is_following(account)
-            context['is_followed'] = Following.objects.get(user=account).is_following(request.user)
+            following_model_user = Following.objects.get(user=request.user)
+            context['is_following'] = following_model_user.is_following(account)
+            context['is_followed'] = following_model_account.is_following(request.user)
 
-            context['following_count'] = following_model.count()
-            context['followers_count'] = followers_model.count()
+        context['following_count'] = following_model_account.count()
+        context['followers_count'] = followers_model_account.count()
 
         context["account"] = account
         return render(request, 'users/account.html', context=context)

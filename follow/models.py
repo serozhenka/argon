@@ -108,11 +108,11 @@ class FollowingRequest(models.Model):
             1. receiver is added to sender user following list
             2. sender is added to receiver user followers list
         """
-
-        sender_following = Following.objects.get(user=self.sender)
-        sender_following.add_following(self.receiver)
-        self.is_active = False
-        self.save()
+        if self.is_active:
+            sender_following = Following.objects.get(user=self.sender)
+            sender_following.add_following(self.receiver)
+            self.is_active = False
+            self.save()
 
     def decline(self):
         """
@@ -120,17 +120,18 @@ class FollowingRequest(models.Model):
             1. following request is made inactive
         """
 
-        self.is_active = False
-        self.save()
+        if self.is_active:
+            self.is_active = False
+            self.save()
 
     def cancel(self):
         """
         Sender cancels following request to the receiver
             1. following request is made inactive
         """
-
-        self.is_active = False
-        self.save()
+        if self.is_active:
+            self.is_active = False
+            self.save()
 
 
 
