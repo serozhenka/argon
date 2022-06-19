@@ -1,6 +1,8 @@
 from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 
+from . import search_client
 from .serializers import AccountSerializer
 from follow.models import Followers, Following
 from users.models import Account

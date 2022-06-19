@@ -25,9 +25,11 @@ class RegisterForm(UserCreationForm, forms.ModelForm):
     def clean_username(self):
         username = self.cleaned_data['username']
         if username == username.lower():
-            if all([x.isalnum() or x == '_' for x in username]):
-                return username
-        raise forms.ValidationError('Username can only contain lowercase letters, numbers and underscores')
+            if username.isdecimal():
+                raise forms.ValidationError('Username can not contain only numbers')
+            if not all([x.isalnum() or x == '_' for x in username]):
+                raise forms.ValidationError('Username can only contain lowercase letters, numbers and underscores')
+        return username
 
 
 class LoginForm(forms.Form):

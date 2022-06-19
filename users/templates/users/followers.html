@@ -13,8 +13,6 @@
         </div>
     </section>
 
-    <div class="d-none"></div>
-
     <script>
         let limit = 20;
         let usersContainer = document.getElementById('followers-container')
@@ -35,8 +33,9 @@
 
         function containerAppendData(data) {
           data.forEach(function(user) {
-            let div = document.createElement('div')
-            div.classList.add('d-flex', 'p-2')
+            let div = document.createElement('a')
+            div.classList.add('d-flex', 'p-2', 'text-decoration-none', 'link', 'text-dark', 'user-block', 'rounded')
+            div.href = "{% url 'account:account' username=user.username %}"
 
             div.innerHTML = `
                 <div class="col-1 me-3">

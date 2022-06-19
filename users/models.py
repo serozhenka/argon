@@ -64,3 +64,6 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+    def image_url(self):
+        return self.image.url

@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
 
     path('', users_views.feed_page, name='feed'),
+    path('user-search/', users_views.user_search_page, name='user-search'),
 ]
 
 if settings.DEBUG:

@@ -168,6 +168,11 @@ def account_followings(request, username):
         return render(request, 'users/followings.html', context={'account_username': username})
 
 @login_required(login_url=reverse_lazy('account:login'))
+def user_search_page(request):
+    if request.method == "GET":
+        return render(request, 'users/user-search.html')
+
+@login_required(login_url=reverse_lazy('account:login'))
 def crop_image(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:

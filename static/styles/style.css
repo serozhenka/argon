@@ -50,10 +50,9 @@ body {
 }
 
 .auth-container {
-    /*border: 1px solid #808080;*/
     border-radius: 5px;
     min-height: 200px;
-    height: 70vh;
+    height: 75vh;
     box-shadow: 0 0 5px #bebebe;
 }
 
@@ -147,4 +146,16 @@ body {
     background-color: #fff;
     font-size: 0.9em;
     flex-direction: column;
+}
+
+.user-block:hover {
+    background-color: var(--gray-color);
+}
+
+.search-input {
+    width: 100%;
+}
+
+.search-input:focus {
+    outline: none;
 }

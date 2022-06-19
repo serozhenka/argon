@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load show_error %}
 
 {% block content %}
 
@@ -91,11 +92,9 @@
                                                         <span>{{ err }}</span>
                                                     </div>
                                                 {% endfor %}
-                                                {% for key, err_list in form.errors.items %}
-                                                    <div class="text-danger">
-                                                        <small>- {{ err_list.0 }}</small>
-                                                    </div>
-                                                {% endfor %}
+                                                <div class="text-danger">
+                                                    <small>- {{ form.errors|show_error }}</small>
+                                                </div>
                                             </div>
 
                                             <div class="d-grid gap-4">
@@ -106,7 +105,6 @@
                                                 <span class="mx-3 ">or</span>
                                                 <div class="or-line"></div>
                                             </div>
-{#                                            <a href="#">Register through google</a>#}
                                             <div class="text-center">
                                                 Already have an account?
                                                 <a class="link link-color" href="{% url 'account:login' %}">Login</a>

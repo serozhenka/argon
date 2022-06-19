@@ -31,6 +31,7 @@ INSTALLED_APPS = [
 
     # external apps
     'rest_framework',
+    'algoliasearch_django',
 
     # internal apps
     'users.apps.UsersConfig',
@@ -148,4 +149,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ]
+}
+
+ALGOLIA = {
+    'APPLICATION_ID': config('ALGOLIA_APPLICATION_ID'),
+    'API_KEY': config('ALGOLIA_API_KEY'),
+    'INDEX_PREFIX': 'argon',
 }
