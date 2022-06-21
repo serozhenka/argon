@@ -16,7 +16,7 @@
     <script>
         let limit = 20;
         let usersContainer = document.getElementById('followers-container')
-        let url = "{% url 'api-following-list' username=account_username %}" + `?limit=${limit}&offset=0`
+        let url = "{% url 'api:api-following-list' username=account_username %}" + `?limit=${limit}&offset=0`
 
         usersContainer.addEventListener('scroll', scrollListener)
         getNextPage()

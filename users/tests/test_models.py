@@ -1,3 +1,4 @@
+from PIL import Image
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -23,9 +24,16 @@ class TestUserModel(TestCase):
 
     def test_image_url(self):
         filename = 'test.jpg'
-        self.user.image.save(filename, NamedTemporaryFile(suffix=".jpg"))
+
+        with NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (1, 1))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            self.user.image.save(filename, ntf)
+
+        self.user.refresh_from_db()
         self.assertEqual(self.user.image.url, settings.MEDIA_URL + get_profile_image_path(self.user, filename))
-        self.user.image.delete()
+        self.user.image.delete(save=False)
 
     def test_default_user_is_not_superuser(self):
         self.assertFalse(self.user.is_staff, True)

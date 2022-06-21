@@ -13,11 +13,3 @@ class AccountSerializer(serializers.ModelSerializer):
 
     def get_is_following_by_request_user(self, obj):
         return self.context['request'].user.following.is_following(obj)
-
-class FollowersSerializer(serializers.ModelSerializer):
-    user = AccountSerializer()
-    users_followers = AccountSerializer(many=True)
-
-    class Meta:
-        model = Followers
-        fields = ['user', 'users_followers']

@@ -29,6 +29,8 @@ class Following(models.Model):
             1. second user is added to first's user following list
             2. first user is added to second's user followers list
         """
+        if other_user == self.user:
+            return
 
         if other_user not in self.users_following.all():
             self.users_following.add(other_user)
@@ -89,7 +91,7 @@ class Followers(models.Model):
         ou_following_model = Following.objects.get(user=other_user)
 
         if self.user in ou_following_model.users_following.all():
-            ou_following_model.users_following.remove(other_user)
+            ou_following_model.users_following.remove(self.user)
 
 
 class FollowingRequest(models.Model):
@@ -97,6 +99,9 @@ class FollowingRequest(models.Model):
     receiver: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='receiver')
     is_active: bool = models.BooleanField(default=True)
     created: datetime = models.DateTimeField()
+
+    def __str__(self):
+        return f'{self.sender}-{self.receiver}'
 
     def save(self, *args, **kwargs):
         self.created = timezone.now()
