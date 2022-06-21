@@ -13,12 +13,12 @@ from .utils import user_exists_and_is_not_request_user
 def follow_general_view(request, username):
 
     if request.method == "GET":
-        return redirect('feed')
+        return redirect('post:feed')
 
     elif request.method == "POST":
         account, passes = user_exists_and_is_not_request_user(request, username)
         if not passes:
-            return redirect('feed')
+            return redirect('post:feed')
 
         action = request.POST.get('action')
 
@@ -56,6 +56,6 @@ def follow_general_view(request, username):
                 return HttpResponse(json.dumps({'response_result': 'error'}), content_type='application/json')
 
         except FollowingRequest.DoesNotExist:
-            return redirect('feed')
+            return redirect('post:feed')
 
         return HttpResponse(json.dumps({'response_result': 'success'}), content_type='application/json')

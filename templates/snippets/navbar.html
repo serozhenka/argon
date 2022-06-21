@@ -1,13 +1,13 @@
 <nav class="navbar navbar-expand sticky-top bg-light p-1">
     <div class="d-flex col-lg-6 col-md-8 col-10 mx-auto align-items-center">
-        <a href="{% url 'feed' %}" class="navbar-brand"><h2 class="mb-0 header-font">Argon</h2></a>
+        <a href="{% url 'post:feed' %}" class="navbar-brand"><h2 class="mb-0 header-font">Argon</h2></a>
 
         <div class="collapse navbar-collapse justify-content-end" id="nav">
             <ul class="navbar-nav">
 
               <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-house fs-4"></i></a></li>
               <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-4"></i></a></li>
-              <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-4"></i></a></li>
+              <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-4"></i></a></li>
               <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-bell fs-4"></i></a></li>
 
               <li class="nav-item mx-1 d-flex align-items-center">

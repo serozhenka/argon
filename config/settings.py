@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'follow.apps.FollowConfig',
     'api.apps.ApiConfig',
+    'post.apps.PostConfig',
 ]
 
 MIDDLEWARE = [

@@ -37,7 +37,7 @@ def login_page(request):
             )
             if user:
                 login(request, user)
-                return redirect('feed')
+                return redirect('post:feed')
 
         context['form'] = form
 
@@ -55,7 +55,7 @@ def register_page(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('feed')
+            return redirect('post:feed')
 
         context['form'] = form
 
@@ -64,11 +64,7 @@ def register_page(request):
 @login_required(login_url=reverse_lazy('account:login'))
 def logout_page(request):
     logout(request)
-    return redirect('feed')
-
-@login_required(login_url=reverse_lazy('account:login'))
-def feed_page(request):
-    return render(request, 'feed.html')
+    return redirect('post:feed')
 
 @login_required(login_url=reverse_lazy('account:login'))
 def account_page(request, username):
@@ -77,7 +73,7 @@ def account_page(request, username):
         try:
             account = Account.objects.get(username=username)
         except Account.DoesNotExist:
-            return redirect('feed')
+            return redirect('post:feed')
 
         following_model_account = Following.objects.get(user=account)
         followers_model_account = Followers.objects.get(user=account)
@@ -110,7 +106,7 @@ def account_page(request, username):
 def account_edit_page(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:
-        return redirect('feed')
+        return redirect('post:feed')
 
     context = {
         "account": account,
@@ -132,7 +128,7 @@ def account_edit_page(request, username):
 def privacy_and_security_page(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:
-        return redirect('feed')
+        return redirect('post:feed')
 
     context = {
         "account": account,
@@ -146,7 +142,7 @@ def privacy_and_security_page(request, username):
 def change_user_privacy_status(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:
-        return redirect('feed')
+        return redirect('post:feed')
 
     if request.method == "GET":
         return redirect('account:privacy-security', username=request.user.username)
@@ -176,12 +172,12 @@ def user_search_page(request):
 def crop_image(request, username):
     account, passes = user_exists_and_is_account_owner(request, username)
     if not passes:
-        return redirect('feed')
+        return redirect('post:feed')
 
     payload = {}
 
     if request.method == "GET":
-        return redirect('feed')
+        return redirect('post:feed')
 
     elif request.method == "POST":
         try:
