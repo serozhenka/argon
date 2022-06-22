@@ -2,5 +2,121 @@
 {% load static %}
 
 {% block content %}
-    hello world
+
+    <section class="mt-3">
+        <div class="row mx-0">
+            <div class="col-xl-3 col-lg-4 col-md-5 col-sm-6 col-8 mx-auto">
+
+                <div class="mx-auto mt-3" id="post-container"></div>
+            </div>
+            <div id="observe-container" class="d-block py-3"></div>
+        </div>
+    </section>
+
+    <script>
+        let limit = 3;
+        let postContainer = document.getElementById('post-container')
+        let observeContainer = document.getElementById('observe-container')
+        let url = "{% url 'api:api-post-list' %}" + `?limit=${limit}&offset=0`
+
+        let observer;
+        observer = new IntersectionObserver(callback, {
+          root: null,        // intersect with viewport
+          rootMargin: '0px', // no margin when computing intersections
+          threshold:  0,   // execute callback when every pixel is visible
+        })
+
+        function callback(entries) {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    getNextPage()
+                }
+            }
+        }
+
+        observer.observe(observeContainer)
+
+        function getNextPage() {
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              url = data.next
+              console.log(url)
+              if (!url) { observer.unobserve(observeContainer) }
+              containerAppendData(data.results)
+            })
+        }
+
+        function containerAppendData(data) {
+          data.forEach(function(post, i) {
+            let div = document.createElement('div')
+            div.classList.add(`card`,`mt-3`, `box-shadow`)
+            let user_href = "{% url 'account:account' username=123456789 %}".replace(123456789, post.user.username)
+
+            div.innerHTML += `
+               <div class="card-header d-flex align-items-center">
+                   <div class="col-1 me-2">
+                       <a href="${user_href}">
+                           <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${post.id}_profile_image">
+                       </a>
+                   </div>
+                   <div class="col-11">
+                       <a href="${user_href}" class="fw-bold link text-dark">${post.user.username}</a>
+                   </div>
+               </div>
+            `
+
+            if (post.post_images.length === 1) {
+              div.innerHTML += `<img src="{% static 'images/default.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
+            } else {
+
+              let carouselButtons = post.post_images.map((item, i) => {
+                return `<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`
+              }).join("")
+
+              let carouselImages = post.post_images.map((item, i) => {
+                return `<div class="carousel-item ${i === 0 ? "active" : ""}">
+                    <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="${post.id}_image_${i}" style="border-radius: 0!important">
+                 </div>`
+              }).join("")
+
+
+              div.innerHTML += `
+                   <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
+                      <div class="carousel-indicators" id="carouselButtonsIndicators">
+                          ${carouselButtons}
+                      </div>
+                      <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+                          ${carouselImages}
+                      </div>
+                  </div>
+              `
+            }
+
+            div.innerHTML += `
+               <div class="card-body">
+                  <div class="d-flex">
+                      <i class="fa-light fa-heart fs-5 me-3"></i>
+                      <i class="fa-light fa-comment fs-5"></i>
+                  </div>
+
+                  <div class="mt-1">
+                      <span class="fw-bold">${post.likes_count}</span> likes
+                  </div>
+
+                  <p class="card-text fs-14px mt-1 text-muted">${post.description}</p>
+              </div>
+            `
+            postContainer.appendChild(div)
+
+            for (let i = 0; i < post.post_images.length; i++) {
+                preLoadImage(post.post_images[i].image, `${post.id}_image_${i}`)
+            }
+
+            preLoadImage(post.user.image, `${post.id}_profile_image`)
+          })
+        }
+
+
+    </script>
 {% endblock content %}

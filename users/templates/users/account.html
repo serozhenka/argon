@@ -4,7 +4,7 @@
 {% block content %}
 
     <section class="mt-4">
-        <div class="row">
+        <div class="row mx-0">
             <div class="col-lg-6 col-md-8 col-10 mx-auto" id="scroll-container">
                 <div class="row">
                     <div class="d-flex col-4 justify-content-center align-items-center">
@@ -133,7 +133,7 @@
         let limit = 12;
         let postContainer = document.getElementById('post-container')
         let observeContainer = document.getElementById('observe-container')
-        let url = "{% url 'api:api-post-list-by-user' username=request.user.username %}" + `?limit=${limit}&offset=0`
+        let url = "{% url 'api:api-post-list-by-user' username=account.username %}" + `?limit=${limit}&offset=0`
 
         let observer;
         observer = new IntersectionObserver(callback, {
