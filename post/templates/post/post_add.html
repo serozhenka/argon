@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <section class="mt-4">
+        <div class="row">
+            <div class="col-lg-6 col-md-8 col-10 mx-auto">
+                <div id="upload-new-container" class="d-flex align-items-center justify-content-center mx-auto bg-light box-shadow rounded" style="max-width: 350px; height: 300px;">
+                    <div class="h3">Upload new images</div>
+{#                    <img id="edit-post-images" class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" style="max-width: 100%; max-height: 100%;">#}
+                </div>
+
+                <div id="carouselExampleIndicators" class="carousel slide d-none mx-auto rounded box-shadow" data-bs-interval="false" style="max-width: 350px; height: 350px;">
+                    <div class="carousel-indicators" id="carouselButtonsIndicators">
+{#                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>#}
+
+                    </div>
+                    <div class="d-flex align-items-center carousel-inner h-100" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+{#                        <div class="carousel-item active">#}
+{#                          <img src="{% static 'images/default.png' %}" class="d-block w-100" alt="">#}
+{#                        </div>#}
+
+                    </div>
+                </div>
+
+                <form action="" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                     <div class="mb-3">
+                        <input class="d-none" type="file" name="images" id="account-image-file-selector" accept="image/*" required multiple onchange="readURL(this)">
+                    </div>
+
+                    <div class="mb-3">
+                        <textarea class="form-control mx-auto custom-scroll" name="description" maxlength="164" contentEditable  rows="3" placeholder="Enter description" style="overflow-y:scroll; overflow-x: hidden; max-width: 350px;"></textarea>
+                    </div>
+
+
+
+                    <div class="d-grid gap-2 mx-auto" style="max-width: 350px">
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+
+    const uploadNewContainer = document.getElementById("upload-new-container")
+    const fileSelector = document.getElementById("account-image-file-selector")
+    const carouselContainer = document.getElementById('carouselExampleIndicators')
+    const carouselButtons = document.getElementById('carouselButtonsIndicators')
+    const carouselImages = document.getElementById('carouselImagesIndicators')
+    const postImages = document.getElementById("edit-post-images")
+    let inputFiles = []
+
+    enableUploadNewContainerOverlay()
+    function readURL(input) {
+
+        if (input.files.length > 4) {
+          alert("Maximum of 4 images can be uploaded")
+          fileSelector.value = ""
+          return;
+        }
+
+        if (input.files.length > 0) {
+
+            carouselButtons.innerHTML = ""
+            carouselImages.innerHTML = ""
+
+            for(let i = 0; i < input.files.length; i++) {
+              let fileReader = new FileReader()
+
+              fileReader.onload = function (e) {
+                let image = e.target.result
+                carouselButtons.innerHTML += `<button class="${i === 0 ? 'active': ''}" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" aria-current="true" aria-label="Slide ${i}"></button>`
+                carouselImages.innerHTML += `
+                    <div class="carousel-item ${i === 0 ? 'active': ''}">
+                      <img src="${image}" class="d-block w-100" alt="" id="carousel_image_${i}">
+                    </div>
+                `
+              }
+
+              fileReader.readAsDataURL(input.files[i])
+            }
+
+            carouselContainer.classList.remove('d-none')
+            carouselContainer.classList.add('d-block')
+            uploadNewContainer.classList.remove('d-flex')
+            uploadNewContainer.classList.add('d-none')
+
+        }
+    }
+
+    function enableUploadNewContainerOverlay() {
+        uploadNewContainer.style.transition = 'all .5s'
+        uploadNewContainer.addEventListener('mouseover', uploadNewContainerMouseOver)
+        uploadNewContainer.addEventListener('mouseout', uploadNewContainerMouseOut)
+        uploadNewContainer.addEventListener('click', uploadNewContainerMouseClick)
+    }
+
+    function disableUploadNewContainerOverlay() {
+        uploadNewContainer.style.transition = 'all .5s'
+        uploadNewContainer.removeEventListener('mouseover', uploadNewContainerMouseOver)
+        uploadNewContainer.removeEventListener('mouseout', uploadNewContainerMouseOut)
+        uploadNewContainer.removeEventListener('click', uploadNewContainerMouseClick)
+    }
+
+    function uploadNewContainerMouseOver(e) {
+        uploadNewContainer.style.opacity = '0.5'
+        uploadNewContainer.style.transform = 'scale(1.02)'
+    }
+
+    function uploadNewContainerMouseOut(e) {
+        uploadNewContainer.style.opacity = '1'
+        uploadNewContainer.style.transform = 'scale(1.00)'
+    }
+
+    function uploadNewContainerMouseClick(e) {
+        fileSelector.click()
+    }
+
+
+    </script>
+{% endblock content %}

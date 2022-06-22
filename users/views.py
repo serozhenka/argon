@@ -192,16 +192,15 @@ def crop_image(request, username):
 
             cropX = 0 if cropX < 0 else cropX
             cropY = 0 if cropY < 0 else cropY
-
             cropped_image = img[cropY:cropY + cropHeight, cropX:cropX + cropWidth]
 
-            if cropped_image.shape[0] > 300:
-                cropped_image = cv2.resize(cropped_image, (300, 300))
+            if max_size := int(request.POST.get('max_image_x_dimension')):
+                if cropped_image.shape[0] > max_size:
+                    cropped_image = cv2.resize(cropped_image, (300, 300))
 
             cv2.imwrite(url, cropped_image)
-            account.image.delete()
+            account.image.delete(save=False)
             account.image.save("profile_image.png", files.File(open(url, 'rb')))
-            account.save()
 
             payload['result'] = 'success'
             payload['cropped_image_url'] = account.image.url
