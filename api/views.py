@@ -1,10 +1,10 @@
 from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
 
-from . import search_client
-from .serializers import AccountSerializer
+from .permissions import FollowingPrivatePermission
+from .serializers import AccountSerializer, PostSerializer
 from follow.models import Followers, Following
+from post.models import Post
 from users.models import Account
 
 class FollowersApiView(generics.ListAPIView):
@@ -22,3 +22,20 @@ class FollowingApiView(generics.ListAPIView):
     def get_queryset(self):
         user = Account.objects.get(username=self.kwargs.get('username'))
         return Following.objects.get(user=user).users_following.all()
+
+class PostUserApiView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    pagination_class = LimitOffsetPagination
+    permission_classes = [FollowingPrivatePermission]
+
+    def get_queryset(self):
+        user = Account.objects.get(username=self.kwargs.get('username'))
+        return Post.objects.filter(user=user).order_by('-created')
+
+class PostApiView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        following_users = Following.objects.get(user=self.request.user).users_following.all()
+        return Post.objects.filter(user__in=following_users).order_by('-created')
