@@ -164,3 +164,9 @@ body {
     width: 0;
     background: transparent;
 }
+
+.account-view-image {
+    width: 98%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+}

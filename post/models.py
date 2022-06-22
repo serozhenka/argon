@@ -18,11 +18,15 @@ class Post(models.Model):
     def __str__(self):
         return str(self.id)
 
+    @property
+    def likes_count(self):
+        return PostLike.objects.filter(post=self).count()
 
 class PostImage(models.Model):
     """Like model to Post model."""
     post: Post = models.ForeignKey(Post, on_delete=models.CASCADE)
     image = models.ImageField(upload_to=get_post_image_path)
+    order = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return f"{self.post.user.username} post image"

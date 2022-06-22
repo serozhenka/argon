@@ -119,6 +119,14 @@
                         </a>
                     </div>
                 </div>
+
+                <div class="d-flex flex-wrap flex-row mx-auto mt-3">
+                    {% for post_image in post_images %}
+                        <div class="col-4 mt-1">
+                            <img class="img-fluid account-view-image d-block mx-auto" src="{{ post_image.0.image.url }}" alt="user-post-image-{{ forloop.counter }}">
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </section>

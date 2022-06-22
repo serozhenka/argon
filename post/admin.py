@@ -7,12 +7,9 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ('user', 'likes_count', 'id', 'created')
     search_fields = ('user__email', 'user__username')
 
-    def likes_count(self, obj):
-        return PostLike.objects.filter(post=obj).count()
-
 
 class PostImageAdmin(admin.ModelAdmin):
-    list_display = ('post', 'post_user', 'id')
+    list_display = ('post', 'post_user', 'id', 'order')
     search_fields = ('post__user__username', 'post__user__email')
 
     def post_user(self, obj):

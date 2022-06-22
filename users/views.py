@@ -11,10 +11,11 @@ from django.shortcuts import render, redirect, reverse
 from django.urls import reverse_lazy
 from enum import Enum
 
-from follow.models import Following, Followers, FollowingRequest
 from .forms import LoginForm, RegisterForm, AccountEditForm
 from .models import Account
 from .utils import user_exists_and_is_account_owner, save_temp_profile_image_from_base64String
+from follow.models import Following, Followers, FollowingRequest
+from post.models import Post, PostImage
 
 class DashboardPages(str, Enum):
     EDIT_PROFILE = 'edit_profile'
@@ -98,6 +99,10 @@ def account_page(request, username):
 
         context['following_count'] = following_model_account.count()
         context['followers_count'] = followers_model_account.count()
+
+        context['post_images'] = []
+        for image in PostImage.objects.filter(post__user=request.user, order=0):
+            context['post_images'].append([image, image.post.likes_count])
 
         context["account"] = account
         return render(request, 'users/account.html', context=context)
