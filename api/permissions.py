@@ -9,6 +9,8 @@ class FollowingPrivatePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         other_user = Account.objects.get(username=view.kwargs.get('username'))
+        if other_user == request.user:
+            return True
         if not other_user.is_public:
             following_users = Following.objects.get(user=request.user).users_following.all()
             return other_user in following_users

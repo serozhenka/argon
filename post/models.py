@@ -26,7 +26,7 @@ class PostImage(models.Model):
     """Like model to Post model."""
     post: Post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_images')
     image = models.ImageField(upload_to=get_post_image_path)
-    order = models.PositiveSmallIntegerField(default=0)
+    order: int = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return f"{self.post.user.username} post image"

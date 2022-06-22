@@ -5,7 +5,7 @@
 
     <section class="mt-4">
         <div class="row">
-            <div class="col-lg-6 col-md-8 col-10 mx-auto">
+            <div class="col-lg-6 col-md-8 col-10 mx-auto" id="scroll-container">
                 <div class="row">
                     <div class="d-flex col-4 justify-content-center align-items-center">
                         <div class="col col-lg-8 col-md-10">
@@ -120,18 +120,66 @@
                     </div>
                 </div>
 
-                <div class="d-flex flex-wrap flex-row mx-auto mt-3">
-                    {% for post_image in post_images %}
-                        <div class="col-4 mt-1">
-                            <img class="img-fluid account-view-image d-block mx-auto" src="{{ post_image.0.image.url }}" alt="user-post-image-{{ forloop.counter }}">
-                        </div>
-                    {% endfor %}
+                <div class="d-flex flex-wrap flex-row mx-auto mt-3" id="post-container">
+
                 </div>
+
+                <div id="observe-container" class="d-block py-3"></div>
             </div>
         </div>
     </section>
 
     <script>
+        let limit = 12;
+        let postContainer = document.getElementById('post-container')
+        let observeContainer = document.getElementById('observe-container')
+        let url = "{% url 'api:api-post-list-by-user' username=request.user.username %}" + `?limit=${limit}&offset=0`
+
+        let observer;
+        observer = new IntersectionObserver(callback, {
+          root: null,        // intersect with viewport
+          rootMargin: '0px', // no margin when computing intersections
+          threshold:  0,   // execute callback when every pixel is visible
+        })
+
+        function callback(entries) {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    getNextPage()
+                }
+            }
+        }
+
+        observer.observe(observeContainer)
+
+        function getNextPage() {
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              url = data.next
+              console.log(url)
+              if (!url) { observer.unobserve(observeContainer) }
+              containerAppendData(data.results)
+            })
+        }
+
+        function containerAppendData(data) {
+          data.forEach(function(post, i) {
+            let div = document.createElement('a')
+            div.classList.add('col-4', 'mt-1', 'text-decoration-none')
+            div.style.position = 'relative'
+            {#div.href = "{% url 'account:account' username=user.username %}"#}
+
+            div.innerHTML += `
+                <img class="img-fluid account-view-image d-block mx-auto" src="{% static 'images/gray-bg.png' %}" id="${post.id}_post_image">
+                <div class="account-view-desc text-dark">
+                    <i class="fa-solid fa-heart me-1"></i> ${post.likes_count}
+                </div>
+            `
+            postContainer.appendChild(div)
+            preLoadImage(post.post_images[0].image, `${post.id}_post_image`)
+          })
+        }
 
         function generalFollowRequest(action) {
           $.ajax({
