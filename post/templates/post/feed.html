@@ -67,7 +67,7 @@
             `
 
             if (post.post_images.length === 1) {
-              div.innerHTML += `<img src="{% static 'images/default.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
+              div.innerHTML += `<img src="{% static 'images/gray-bg.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
             } else {
 
               let carouselButtons = post.post_images.map((item, i) => {
@@ -96,15 +96,16 @@
             div.innerHTML += `
                <div class="card-body">
                   <div class="d-flex">
-                      <i class="${post.is_liked ? "fa-light": "fa-solid" } text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="${post.id}"></i>
+                      <i class="${post.is_liked_by_user ? "fa-solid" : "fa-light" } text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="${post.id}" data-action="${post.is_liked_by_user ? "dislike":"like"}"></i>
                       <i class="fa-light fa-comment fs-5"></i>
                   </div>
 
                   <div class="mt-1">
-                      <span class="fw-bold" id="${post.id}_likes_count">${post.likes_count}</span> like${ post.likes_count === 1 ? "s" : "" }
+                      <span class="fw-bold" id="${post.id}_likes_count">${post.likes_count}</span> <span id="${post.id}_like_word">like${ post.likes_count === 1 ? "" : "s" }</span>
                   </div>
 
-                  <p class="card-text fs-14px mt-1 text-muted">${post.description}</p>
+                  <p class="card-text fs-14px mt-1 mb-2 text-muted">${post.description}</p>
+                  <div class="text-muted fs-14px">${post.timestamp}</div>
               </div>
             `
             postContainer.appendChild(div)
@@ -118,24 +119,33 @@
           })
         }
 
-        function postLike(e) {
-            fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {
+        async function postLike(e) {
+            let action = e.target.dataset.action
+            if (!['like', 'dislike'].includes(action)) { return }
+
+            this.removeEventListener(e.type, postLike)
+            await fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {
               method: 'POST',
               headers: {
                 'X-CSRFToken': "{{ csrf_token }}",
                 'Content-Type': 'application/json',
-              }
+              },
+              body: JSON.stringify({'action': e.target.dataset.action})
             })
             .then(response => response.json())
             .then(data => {
               if (data.response_result === "success") {
                   e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')
                   e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')
+                  e.target.dataset.action = data.is_liked ? 'dislike': 'like'
 
                   let likesCountBtn = document.getElementById(`${e.target.dataset.post_id}_likes_count`)
+                  let likesWord = document.getElementById(`${e.target.dataset.post_id}_like_word`)
                   likesCountBtn.innerText = String(Number(likesCountBtn.innerText) + (data.is_liked ? 1:-1))
+                  likesWord.innerText = data.likes_count === 1 ? "like": "likes";
               }
              })
+            this.addEventListener(e.type, postLike)
         }
 
 

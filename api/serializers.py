@@ -32,7 +32,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['user', 'description', 'post_images', 'is_liked_by_user', 'likes_count', 'is_edited', 'id', 'created']
+        fields = ['user', 'description', 'post_images', 'is_liked_by_user', 'likes_count', 'is_edited', 'id', 'timestamp']
 
     def get_is_liked_by_user(self, obj):
         try:

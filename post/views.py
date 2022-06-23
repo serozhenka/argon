@@ -1,3 +1,5 @@
+import json
+
 import cv2
 
 from django.shortcuts import render
@@ -47,6 +49,17 @@ def post_add_page(request):
         return redirect('account:account', request.user.username)
 
 @login_required(login_url=reverse_lazy('account:login'))
+def post_page(request, post_id):
+    if request.method == "GET":
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return redirect('post:feed')
+
+        context = {'post': post}
+        return render(request, 'post/post_page.html', context)
+
+@login_required(login_url=reverse_lazy('account:login'))
 def post_like_page(request, post_id):
     if request.method == "GET":
         return render(request, 'post/feed.html')
@@ -63,12 +76,17 @@ def post_like_page(request, post_id):
             user=request.user,
             post=post,
         )
-        post_like.is_liked = not post_like.is_liked
+        action = json.loads(request.body).get('action')
+        if action == "like" and not post_like.is_liked:
+            post_like.is_liked = True
+        elif action == "dislike" and post_like.is_liked:
+            post_like.is_liked = False
         post_like.save()
 
         return JsonResponse({
             'response_result': 'success',
             'is_liked': post_like.is_liked,
+            'likes_count': post.likes_count,
         })
 
 

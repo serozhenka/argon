@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db import models
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from users.models import Account
 
@@ -20,7 +23,14 @@ class Post(models.Model):
 
     @property
     def likes_count(self):
-        return PostLike.objects.filter(post=self).count()
+        return PostLike.objects.filter(post=self, is_liked=True).count()
+
+    @property
+    def timestamp(self):
+        if self.created > timezone.now() - timedelta(1):
+            return str(naturaltime(self.created))
+        return f"{self.created.strftime('%d %b, %Y')}"
+
 
 class PostImage(models.Model):
     """Like model to Post model."""
