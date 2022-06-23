@@ -1,13 +1,13 @@
 import cv2
-import os
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
-from .models import Post, PostImage
+from .models import Post, PostImage, PostLike
 from users.utils import user_exists_and_is_account_owner
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -45,4 +45,30 @@ def post_add_page(request):
             cv2.imwrite(absolute_url, img)
 
         return redirect('account:account', request.user.username)
+
+@login_required(login_url=reverse_lazy('account:login'))
+def post_like_page(request, post_id):
+    if request.method == "GET":
+        return render(request, 'post/feed.html')
+    elif request.method == "POST":
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'Post does not exist',
+            })
+
+        post_like, created = PostLike.objects.get_or_create(
+            user=request.user,
+            post=post,
+        )
+        post_like.is_liked = not post_like.is_liked
+        post_like.save()
+
+        return JsonResponse({
+            'response_result': 'success',
+            'is_liked': post_like.is_liked,
+        })
+
 
