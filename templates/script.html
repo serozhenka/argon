@@ -2,50 +2,63 @@
 
 <script>
     let userUrl = "{% url 'account:account' username=123456789 %}"
+    let currentUserUrl = userUrl.replace(123456789, "{{ request.user.username }}")
+    let simplePostHeader = {
+      'X-CSRFToken': "{{ csrf_token }}",
+      'Content-Type': 'application/json',
+    }
 
+    function updateLikesCount(element, count) { element.innerText = String(count) }
+    function updateLikesWord(element, likes_count) { element.innerText = likes_count === 1 ? "like": "likes" }
+    function updateLikesButton(element, is_liked) {
+        element.classList.remove(is_liked ? 'fa-light': 'fa-solid')
+        element.classList.add(is_liked ? 'fa-solid': 'fa-light')
+        element.dataset.action = is_liked ? 'dislike': 'like';
+    }
 
-    async function postComment(e) {
-        let post_id = e.target.dataset.post_id
-        let description = $("#post-comment-description-field").val();
-        if (!description) { return }
+    async function postLike(e) {
+        let action = e.target.dataset.action
+        if (!['like', 'dislike'].includes(action)) { return }
 
-        this.removeEventListener(e.type, postComment)
-        await fetch(postCommentUrl.replace(123456789, post_id), {
+        this.removeEventListener(e.type, postLike)
+        await fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {
           method: 'POST',
-          headers: {
-            'X-CSRFToken': "{{ csrf_token }}",
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({'description': description})
+          headers: simplePostHeader,
+          body: JSON.stringify({'action': e.target.dataset.action})
         })
         .then(response => response.json())
         .then(data => {
           if (data.response_result === "success") {
-                let div = document.createElement('div')
-                div.classList.add(`d-flex`,`p-3`)
-                let user_href = userUrl.replace(123456789, "{{ request.user.username }}")
+              updateLikesButton(e.target, data.is_liked)
+              updateLikesCount(document.getElementById(`${e.target.dataset.post_id}_likes_count`), `${data.likes_count}`)
+              updateLikesWord(document.getElementById(`${e.target.dataset.post_id}_like_word`), `${data.likes_count}`);
+          }
+         })
+        this.addEventListener(e.type, postLike)
+    }
 
-                div.innerHTML += `
-                   <div class="col-1">
-                       <a href="${user_href}">
-                           <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${data.comment_id}_comment_profile_image">
-                       </a>
-                   </div>
-                   <div class="col-9 ms-3">
-                        <a class="fw-bold link text-dark">{{ request.user.username }}</a>
-                       <div class="text-muted fs-14px" style="word-wrap: break-word">${description}</div>
-                       <div class="d-flex">
-                           <span class="fs-14px mt-2 text-muted">now</span>
-                       </div>
-                   </div>
-                   <div class="col-2 text-center">
-                       <span class="text-muted" id="${comment.id}_comment_likes_count">0</span>
-                       <i class="fa-light text-danger fa-heart" id="${comment.id}_comment_like_button" data-comment_id="${comment.id}></i>
-                   </div>
-                `
-              postCommentsContainer.insertBefore(div, postCommentsContainer.childNodes[1])
+
+    async function postComment(e) {
+        let post_id = e.target.dataset.post_id
+        let descriptionField = document.getElementById("post-comment-description-field")
+        if (!descriptionField.value) { return }
+        let url = postCommentUrl.replace(123456789, post_id)
+
+        this.removeEventListener(e.type, postComment)
+        await fetch(url, {
+          method: 'POST',
+          headers: simplePostHeader,
+          body: JSON.stringify({'description': descriptionField.value})
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_result === "success") {
+              let commentDiv = commentElement(data.comment_id, "{{ request.user.username }}", descriptionField.value, "now", 0, false)
+              postCommentsContainer.insertBefore(commentDiv, postCommentsContainer.childNodes[1])
+
+              commentsButtonEventListeners(data.comment_id, "{{ request.user.username }}")
               preLoadImage("{{ request.user.image.url }}",`${data.comment_id}_comment_profile_image`)
-              $("#post-comment-description-field").val("");
+              descriptionField.value = ""
           }
          })
         this.addEventListener(e.type, postComment)
@@ -56,27 +69,87 @@
         let action = e.target.dataset.action
         let comment_id = e.target.dataset.comment_id
         if (!['like', 'dislike'].includes(action)) { return }
+        let url = postCommentLikeUrl.replace(123456789, comment_id)
 
         this.removeEventListener(e.type, postCommentLike)
-        await fetch(postCommentLikeUrl.replace(123456789, `${comment_id}`), {
+        await fetch(url, {
           method: 'POST',
-          headers: {
-            'X-CSRFToken': "{{ csrf_token }}",
-            'Content-Type': 'application/json',
-          },
+          headers: simplePostHeader,
           body: JSON.stringify({'action': e.target.dataset.action})
         })
         .then(response => response.json())
         .then(data => {
           if (data.response_result === "success") {
-              e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')
-              e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')
-              e.target.dataset.action = data.is_liked ? 'dislike': 'like'
-
-              let likesCountBtn = document.getElementById(`${comment_id}_comment_likes_count`)
-              likesCountBtn.innerText = String(`${data.likes_count}`)
+              updateLikesButton(e.target, data.is_liked)
+              updateLikesCount(document.getElementById(`${comment_id}_comment_likes_count`), `${data.likes_count}`)
           }
          })
         this.addEventListener(e.type, postCommentLike)
     }
+
+
+    async function postCommentRemove(e) {
+        let comment_id = e.target.dataset.comment_id
+        let url = postCommentRemoveUrl.replace(123456789, comment_id)
+
+        this.removeEventListener(e.type, postCommentRemove)
+        await fetch(url, {
+          method: 'POST',
+          headers: simplePostHeader
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.response_result === "success") { document.getElementById(`${comment_id}_comment`).remove() }
+            else { this.addEventListener(e.type, postCommentRemove) }
+        })
+    }
+
+
+
+    function commentElement(comment_id, userUsername, description, timestamp, likes_count, is_liked_by_user) {
+
+        let div = document.createElement('div')
+        div.id = `${comment_id}_comment`
+        div.classList.add(`d-flex`,`p-3`)
+        let userCommentHref = "{% url 'account:account' username=123456789 %}".replace(123456789, userUsername)
+
+        div.innerHTML += `
+               <div class="col-1">
+                   <a href="${userCommentHref}">
+                       <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${comment_id}_comment_profile_image">
+                   </a>
+               </div>
+               <div class="col-9 ms-3">
+                   <a class="fw-bold link text-dark">${userUsername}</a>
+                   <div class="text-muted fs-14px" style="word-wrap: break-word">${description}</div>
+                   <div class="d-flex justify-content-between">
+                       <span class="fs-14px mt-2 text-muted">${timestamp}</span>
+                   </div>
+               </div>
+               <div class="col-2">
+                   <div class="text-center">
+                       <span class="text-muted" id="${comment_id}_comment_likes_count">${likes_count}</span>
+                       <i class="${is_liked_by_user ? "fa-solid" : "fa-light"} text-danger fa-heart" id="${comment_id}_comment_like_button" data-comment_id="${comment_id}" data-action="${is_liked_by_user ? "dislike": "like"}"></i>
+                   </div>
+                   ${userUsername === "{{ request.user.username }}" ?
+                        `<div class="mt-2 text-muted text-center"><i class="fa-light fa-xmark" id="${comment_id}_remove_btn" data-comment_id="${comment_id}" style="display: none"></i></div>` : ""
+                   }
+               </div>
+        `
+        return div
+    }
+
+    function commentsButtonEventListeners(comment_id, userUsername) {
+        let commentElem = document.getElementById(`${comment_id}_comment`)
+        let commentRemoveBtn = document.getElementById(`${comment_id}_remove_btn`)
+        document.getElementById(`${comment_id}_comment_like_button`).addEventListener('click', postCommentLike);
+
+        if (userUsername === "{{ request.user.username }}") {
+            commentElem.addEventListener('mouseover', function(e) { commentRemoveBtn.style.display = "block" });
+            commentElem.addEventListener('mouseout', function(e) { commentRemoveBtn.style.display = "none" });
+            commentRemoveBtn.addEventListener('click', postCommentRemove);
+        }
+    }
+
+
 </script>

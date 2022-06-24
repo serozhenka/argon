@@ -13,8 +13,6 @@
         </div>
     </section>
 
-    {% include 'snippets/add_post_modal.html' %}
-
     <script>
         let limit = 10;
         let postContainer = document.getElementById('post-container')
@@ -31,9 +29,7 @@
 
         function callback(entries) {
             for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    getNextPage()
-                }
+                if (entry.isIntersecting) { getNextPage() }
             }
         }
 
@@ -44,12 +40,12 @@
             .then(response => response.json())
             .then(data => {
               url = data.next
+              appendPosts(data.results)
               if (!url) { observer.unobserve(observeContainer) }
-              containerAppendData(data.results)
             })
         }
 
-        function containerAppendData(data) {
+        function appendPosts(data) {
           data.forEach(function(post, i) {
             let div = document.createElement('div')
             div.classList.add(`card`,`mt-3`, `box-shadow`)
@@ -69,30 +65,29 @@
             `
 
             if (post.post_images.length === 1) {
-              div.innerHTML += `<img src="{% static 'images/gray-bg.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
+                div.innerHTML += `<img src="{% static 'images/gray-bg.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
             } else {
+                let carouselButtons = post.post_images.map((item, i) => {
+                    return `<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`
+                }).join("")
 
-              let carouselButtons = post.post_images.map((item, i) => {
-                return `<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`
-              }).join("")
-
-              let carouselImages = post.post_images.map((item, i) => {
-                return `<div class="carousel-item ${i === 0 ? "active" : ""}">
-                    <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="${post.id}_image_${i}" style="border-radius: 0!important">
-                 </div>`
-              }).join("")
+                let carouselImages = post.post_images.map((item, i) => {
+                    return `<div class="carousel-item ${i === 0 ? "active" : ""}">
+                        <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="${post.id}_image_${i}" style="border-radius: 0!important">
+                    </div>`
+                }).join("")
 
 
-              div.innerHTML += `
-                   <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
-                      <div class="carousel-indicators" id="carouselButtonsIndicators">
-                          ${carouselButtons}
-                      </div>
-                      <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
-                          ${carouselImages}
-                      </div>
+                div.innerHTML += `
+                    <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
+                        <div class="carousel-indicators" id="carouselButtonsIndicators">
+                            ${carouselButtons}
+                        </div>
+                        <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+                            ${carouselImages}
+                        </div>
                   </div>
-              `
+                `
             }
 
             div.innerHTML += `
@@ -115,41 +110,10 @@
             for (let i = 0; i < post.post_images.length; i++) {
                 preLoadImage(post.post_images[i].image, `${post.id}_image_${i}`)
                 document.getElementById(`${post.id}_like`).addEventListener('click', postLike)
-                document.getElementById(`${post.id}_comment`).addEventListener('click', addPostModal)
-                document.getElementById(`${post.id}_comment`).post = post
             }
 
             preLoadImage(post.user.image, `${post.id}_profile_image`)
           })
-        }
-
-        async function postLike(e) {
-            let action = e.target.dataset.action
-            if (!['like', 'dislike'].includes(action)) { return }
-
-            this.removeEventListener(e.type, postLike)
-            await fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {
-              method: 'POST',
-              headers: {
-                'X-CSRFToken': "{{ csrf_token }}",
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({'action': e.target.dataset.action})
-            })
-            .then(response => response.json())
-            .then(data => {
-              if (data.response_result === "success") {
-                  e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')
-                  e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')
-                  e.target.dataset.action = data.is_liked ? 'dislike': 'like'
-
-                  let likesCountBtn = document.getElementById(`${e.target.dataset.post_id}_likes_count`)
-                  let likesWord = document.getElementById(`${e.target.dataset.post_id}_like_word`)
-                  likesCountBtn.innerText = String(Number(likesCountBtn.innerText) + (data.is_liked ? 1:-1))
-                  likesWord.innerText = data.likes_count === 1 ? "like": "likes";
-              }
-             })
-            this.addEventListener(e.type, postLike)
         }
 
 

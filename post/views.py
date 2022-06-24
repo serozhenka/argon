@@ -57,7 +57,11 @@ def post_page(request, post_id):
         except Post.DoesNotExist:
             return redirect('post:feed')
 
-        if not post.user.is_public and not request.user.following.is_following(post.user):
+        if (
+            not post.user.is_public and
+            not request.user.following.is_following(post.user) and
+            not post.user == request.user
+        ):
             return redirect('post:feed')
 
         context = {'post': post, 'is_liked': is_post_liked_by_user(request.user, post)}
@@ -137,7 +141,10 @@ def post_comment_page(request, post_id):
                 post=post,
                 description=description,
             )
-            return JsonResponse({'response_result': 'success', 'comment_id': comment.id})
+            return JsonResponse({
+                'response_result': 'success',
+                'comment_id': comment.id,
+            })
         else:
             return JsonResponse({
                 'response_result': 'error',
@@ -182,4 +189,29 @@ def post_comment_like_page(request, comment_id):
             'response_result': 'success',
             'is_liked': comment_like.is_liked,
             'likes_count': comment.likes_count,
+        })
+
+
+@login_required(login_url=reverse_lazy('account:login'))
+def post_comment_remove_page(request, comment_id):
+
+    if request.method == "GET":
+        return render(request, 'post/feed.html')
+
+    elif request.method == "POST":
+        try:
+            comment = Comment.objects.get(id=comment_id)
+        except Comment.DoesNotExist:
+            return JsonResponse({'response_result': 'error', 'message': 'Comment does not exist'})
+
+        if not comment.user == request.user:
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'You are not the comment creator',
+            })
+
+        comment.delete()
+
+        return JsonResponse({
+            'response_result': 'success',
         })
