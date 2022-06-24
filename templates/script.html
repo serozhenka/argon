@@ -3,6 +3,7 @@
 <script>
     let userUrl = "{% url 'account:account' username=123456789 %}"
 
+
     async function postComment(e) {
         let post_id = e.target.dataset.post_id
         let description = $("#post-comment-description-field").val();
@@ -38,8 +39,8 @@
                        </div>
                    </div>
                    <div class="col-2 text-center">
-                       <span class="text-muted">0</span>
-                       <i class="fa-light text-danger fa-heart"></i>
+                       <span class="text-muted" id="${comment.id}_comment_likes_count">0</span>
+                       <i class="fa-light text-danger fa-heart" id="${comment.id}_comment_like_button" data-comment_id="${comment.id}></i>
                    </div>
                 `
               postCommentsContainer.insertBefore(div, postCommentsContainer.childNodes[1])
@@ -48,5 +49,34 @@
           }
          })
         this.addEventListener(e.type, postComment)
+    }
+
+
+    async function postCommentLike(e) {
+        let action = e.target.dataset.action
+        let comment_id = e.target.dataset.comment_id
+        if (!['like', 'dislike'].includes(action)) { return }
+
+        this.removeEventListener(e.type, postCommentLike)
+        await fetch(postCommentLikeUrl.replace(123456789, `${comment_id}`), {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': "{{ csrf_token }}",
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({'action': e.target.dataset.action})
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_result === "success") {
+              e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')
+              e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')
+              e.target.dataset.action = data.is_liked ? 'dislike': 'like'
+
+              let likesCountBtn = document.getElementById(`${comment_id}_comment_likes_count`)
+              likesCountBtn.innerText = String(`${data.likes_count}`)
+          }
+         })
+        this.addEventListener(e.type, postCommentLike)
     }
 </script>

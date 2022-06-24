@@ -89,6 +89,7 @@
         let url = "{% url 'api:api-post-comments-list' post_id=post.id %}" + `?limit=${limit}&offset=0`
         let postLikeUrl = "{% url 'post:post-like' post_id=123456789 %}"
         let postCommentUrl = "{% url 'post:post-comment' post_id=123456789 %}"
+        let postCommentLikeUrl = "{% url 'post:post-comment-like' comment_id=123456789 %}"
 
         document.getElementById("{{post.id}}_like").addEventListener('click', postLike)
         postCommentButton.addEventListener('click', postComment)
@@ -149,8 +150,8 @@
                    </div>
                </div>
                <div class="col-2 text-center">
-                   <span class="text-muted">${comment.likes_count}</span>
-                   <i class="fa-light text-danger fa-heart"></i>
+                   <span class="text-muted" id="${comment.id}_comment_likes_count">${comment.likes_count}</span>
+                   <i class="${comment.is_liked_by_user ? "fa-solid" : "fa-light"} text-danger fa-heart" id="${comment.id}_comment_like_button" data-comment_id="${comment.id}" data-action="${comment.is_liked_by_user ? "dislike": "like"}"></i>
                </div>
             `
 
@@ -158,6 +159,7 @@
             })
 
             for (let i = 0; i < data.length; i++) {
+                document.getElementById(`${data[i].id}_comment_like_button`).addEventListener('click', postCommentLike);
                 preLoadImage(data[i].user.image, `${data[i].id}_comment_profile_image`)
             }
         }
