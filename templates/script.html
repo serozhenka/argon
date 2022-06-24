@@ -1,3 +1,52 @@
+{% load static %}
+
 <script>
     let userUrl = "{% url 'account:account' username=123456789 %}"
+
+    async function postComment(e) {
+        let post_id = e.target.dataset.post_id
+        let description = $("#post-comment-description-field").val();
+        if (!description) { return }
+
+        this.removeEventListener(e.type, postComment)
+        await fetch(postCommentUrl.replace(123456789, post_id), {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': "{{ csrf_token }}",
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({'description': description})
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_result === "success") {
+                let div = document.createElement('div')
+                div.classList.add(`d-flex`,`p-3`)
+                let user_href = userUrl.replace(123456789, "{{ request.user.username }}")
+
+                div.innerHTML += `
+                   <div class="col-1">
+                       <a href="${user_href}">
+                           <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${data.comment_id}_comment_profile_image">
+                       </a>
+                   </div>
+                   <div class="col-9 ms-3">
+                        <a class="fw-bold link text-dark">{{ request.user.username }}</a>
+                       <div class="text-muted fs-14px" style="word-wrap: break-word">${description}</div>
+                       <div class="d-flex">
+                           <span class="fs-14px mt-2 text-muted">now</span>
+                       </div>
+                   </div>
+                   <div class="col-2 text-center">
+                       <span class="text-muted">0</span>
+                       <i class="fa-light text-danger fa-heart"></i>
+                   </div>
+                `
+              postCommentsContainer.insertBefore(div, postCommentsContainer.childNodes[1])
+              preLoadImage("{{ request.user.image.url }}",`${data.comment_id}_comment_profile_image`)
+              $("#post-comment-description-field").val("");
+          }
+         })
+        this.addEventListener(e.type, postComment)
+    }
 </script>

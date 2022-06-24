@@ -26,3 +26,4 @@ function preloadCallback(src, elementId) {
   let img = document.getElementById(elementId)
   img.src = src
 }
+

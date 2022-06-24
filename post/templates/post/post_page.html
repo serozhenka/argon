@@ -49,11 +49,14 @@
                             <div id="observe-container" class="d-block py-3"></div>
                         </div>
 
-                        <hr class="mt-0 mx-2"/>
+                        <div class="input-group mb-3">
+                            <textarea class="form-control custom-scroll disable-focus m-0 bg-light text-muted" id="post-comment-description-field" maxlength="80" rows="1" placeholder="Add a comment..." style="overflow-y:scroll; overflow-x: hidden; border-radius: 0"></textarea>
+                            <button type="button" class="input-group-text bg-light fs-14px text-primary" id="post-comment-button" data-post_id="{{post.id}}" style="border-radius: 0">post</button>
+                        </div>
 
                         <div class="px-3 mb-2">
                             <div class="d-flex">
-                                <i class="fa-light text-danger fa-heart fs-5 me-3" id="{{post.id}}_like" data-post_id="{{post.id}}" data-action="{% if is_liked %}dislike{% else %}like{% endif %}"></i>
+                                <i class="{% if is_liked %}fa-solid{% else %}fa-light{% endif %} text-danger fa-heart fs-5 me-3" id="{{post.id}}_like" data-post_id="{{post.id}}" data-action="{% if is_liked %}dislike{% else %}like{% endif %}"></i>
                             </div>
 
                             <div class="mt-1">
@@ -78,10 +81,25 @@
 
         let limit = 10;
         let postCommentsContainer = document.getElementById('post-comments-container')
+        let postCommentButton = document.getElementById('post-comment-button')
+        let postCommentDescriptionField = document.getElementById('post-comment-description-field')
+
         let observeContainer = document.getElementById('observe-container')
+
         let url = "{% url 'api:api-post-comments-list' post_id=post.id %}" + `?limit=${limit}&offset=0`
         let postLikeUrl = "{% url 'post:post-like' post_id=123456789 %}"
+        let postCommentUrl = "{% url 'post:post-comment' post_id=123456789 %}"
+
         document.getElementById("{{post.id}}_like").addEventListener('click', postLike)
+        postCommentButton.addEventListener('click', postComment)
+        postCommentDescriptionField.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault()}
+        })
+        postCommentDescriptionField.addEventListener('keyup', function(e) {
+          if (e.key === 'Enter' && e.key !== 'Shift' && postCommentDescriptionField.value.trim() !== "") {
+            document.getElementById("post-comment-button").click()
+          }
+        })
 
         let observer;
         observer = new IntersectionObserver(callback, {
@@ -123,14 +141,15 @@
                        <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${comment.id}_comment_profile_image">
                    </a>
                </div>
-               <div class="col-10 ms-3">
+               <div class="col-9 ms-3">
                     <a class="fw-bold link text-dark">${comment.user.username}</a>
-                   <div class="text-muted fs-14px" style="word-wrap: break-word">{{ "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i" }}</div>
+                   <div class="text-muted fs-14px" style="word-wrap: break-word">${comment.description}</div>
                    <div class="d-flex">
                        <span class="fs-14px mt-2 text-muted">${comment.timestamp}</span>
                    </div>
                </div>
-               <div class="col-1">
+               <div class="col-2 text-center">
+                   <span class="text-muted">${comment.likes_count}</span>
                    <i class="fa-light text-danger fa-heart"></i>
                </div>
             `

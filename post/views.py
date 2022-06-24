@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
-from .models import Post, PostImage, PostLike
+from .models import Post, PostImage, PostLike, Comment
 from .utils import is_post_liked_by_user
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -50,6 +50,7 @@ def post_add_page(request):
 
 @login_required(login_url=reverse_lazy('account:login'))
 def post_page(request, post_id):
+
     if request.method == "GET":
         try:
             post = Post.objects.get(id=post_id)
@@ -64,8 +65,10 @@ def post_page(request, post_id):
 
 @login_required(login_url=reverse_lazy('account:login'))
 def post_like_page(request, post_id):
+
     if request.method == "GET":
         return render(request, 'post/feed.html')
+
     elif request.method == "POST":
         try:
             post = Post.objects.get(id=post_id)
@@ -75,7 +78,12 @@ def post_like_page(request, post_id):
                 'message': 'Post does not exist',
             })
 
-        if not post.user.is_public and not post.user == request.user and not request.user.following.is_following(post.userr):
+        if (
+            not post.user.is_public and
+            not post.user == request.user and
+            not request.user.following.is_following(post.user)
+        ):
+
             return JsonResponse({
                 'response_result': 'error',
                 'message': 'You are not currently following that user',
@@ -98,4 +106,43 @@ def post_like_page(request, post_id):
             'likes_count': post.likes_count,
         })
 
+@login_required(login_url=reverse_lazy('account:login'))
+def post_comment_page(request, post_id):
+
+    if request.method == "GET":
+        return render(request, 'post/feed.html')
+
+    elif request.method == "POST":
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'Post does not exist',
+            })
+
+        if (
+                not post.user.is_public and
+                not post.user == request.user and
+                not request.user.following.is_following(post.user)
+        ):
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'You are not currently following that user',
+            })
+
+        if description := json.loads(request.body).get('description'):
+            print(description)
+            comment = Comment.objects.create(
+                user=request.user,
+                post=post,
+                description=description,
+            )
+            print(comment)
+            return JsonResponse({'response_result': 'success', 'comment_id': comment.id})
+        else:
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'No description provided',
+            })
 

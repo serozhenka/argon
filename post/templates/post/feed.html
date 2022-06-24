@@ -13,6 +13,8 @@
         </div>
     </section>
 
+    {% include 'snippets/add_post_modal.html' %}
+
     <script>
         let limit = 10;
         let postContainer = document.getElementById('post-container')
@@ -97,7 +99,7 @@
                <div class="card-body">
                   <div class="d-flex">
                       <i class="${post.is_liked_by_user ? "fa-solid" : "fa-light" } text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="${post.id}" data-action="${post.is_liked_by_user ? "dislike":"like"}"></i>
-                      <i class="fa-light fa-comment fs-5"></i>
+                      <i class="fa-light fa-comment fs-5" id="${post.id}_comment"></i>
                   </div>
 
                   <div class="mt-1">
@@ -113,6 +115,8 @@
             for (let i = 0; i < post.post_images.length; i++) {
                 preLoadImage(post.post_images[i].image, `${post.id}_image_${i}`)
                 document.getElementById(`${post.id}_like`).addEventListener('click', postLike)
+                document.getElementById(`${post.id}_comment`).addEventListener('click', addPostModal)
+                document.getElementById(`${post.id}_comment`).post = post
             }
 
             preLoadImage(post.user.image, `${post.id}_profile_image`)

@@ -1,4 +1,5 @@
 from django.http import Http404
+from django.db.models import ExpressionWrapper, Q, BooleanField
 from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -61,4 +62,8 @@ class PostCommentsApiView(generics.ListAPIView):
         except Post.DoesNotExist:
             raise Http404
 
-        return Comment.objects.filter(post=post).order_by('-created')
+        user = self.request.user
+        return Comment.objects.filter(post=post).annotate(by_user=ExpressionWrapper(
+            Q(user=user),
+            output_field=BooleanField()
+        )).order_by('-by_user', '-created')

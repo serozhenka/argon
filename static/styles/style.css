@@ -202,4 +202,12 @@ body {
 #post-comments-container::-webkit-scrollbar-thumb{
     background: var(--gray-color);
     border-radius: 5px;
-  }
+}
+
+#post-comment-button {
+    transition: all .2s;
+}
+
+#post-comment-button:hover {
+    background-color: var(--light-gray-color)!important;
+}
