@@ -14,7 +14,7 @@
     </section>
 
     <script>
-        let limit = 3;
+        let limit = 10;
         let postContainer = document.getElementById('post-container')
         let observeContainer = document.getElementById('observe-container')
         let url = "{% url 'api:api-post-list' %}" + `?limit=${limit}&offset=0`

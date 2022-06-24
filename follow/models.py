@@ -7,7 +7,6 @@ from typing import Union, List
 
 from users.models import Account
 
-
 class Following(models.Model):
     user: Account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     users_following: Union[QuerySet, List[Account]] = models.ManyToManyField(

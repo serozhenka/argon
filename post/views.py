@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
 from .models import Post, PostImage, PostLike
-from users.utils import user_exists_and_is_account_owner
+from .utils import is_post_liked_by_user
 
 @login_required(login_url=reverse_lazy('account:login'))
 def feed_page(request):
@@ -56,7 +56,10 @@ def post_page(request, post_id):
         except Post.DoesNotExist:
             return redirect('post:feed')
 
-        context = {'post': post}
+        if not post.user.is_public and not request.user.following.is_following(post.user):
+            return redirect('post:feed')
+
+        context = {'post': post, 'is_liked': is_post_liked_by_user(request.user, post)}
         return render(request, 'post/post_page.html', context)
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -70,6 +73,12 @@ def post_like_page(request, post_id):
             return JsonResponse({
                 'response_result': 'error',
                 'message': 'Post does not exist',
+            })
+
+        if not post.user.is_public and not post.user == request.user and not request.user.following.is_following(post.userr):
+            return JsonResponse({
+                'response_result': 'error',
+                'message': 'You are not currently following that user',
             })
 
         post_like, created = PostLike.objects.get_or_create(

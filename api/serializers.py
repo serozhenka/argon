@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from users.models import Account
-from post.models import Post, PostImage, PostLike
+from post.models import Post, PostImage, PostLike, Comment, CommentLike
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -25,6 +25,23 @@ class PostImageSerializer(serializers.ModelSerializer):
         model = PostImage
         fields = ['image', 'order']
 
+class CommentSerializer(serializers.ModelSerializer):
+    user = SimpleAccountSerializer()
+    is_liked_by_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ['user', 'description', 'is_liked_by_user', 'likes_count', 'id', 'timestamp']
+
+    def get_is_liked_by_user(self, obj):
+        try:
+            return CommentLike.objects.get(
+                user=self.context['request'].user,
+                comment=obj,
+            ).is_liked
+        except CommentLike.DoesNotExist:
+            return False
+
 class PostSerializer(serializers.ModelSerializer):
     user = SimpleAccountSerializer()
     post_images = PostImageSerializer(many=True)
@@ -42,3 +59,4 @@ class PostSerializer(serializers.ModelSerializer):
             ).is_liked
         except PostLike.DoesNotExist:
             return False
+

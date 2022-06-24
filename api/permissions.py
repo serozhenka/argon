@@ -1,3 +1,4 @@
+from django.http import Http404
 from rest_framework import permissions
 
 from users.models import Account
@@ -8,7 +9,11 @@ class FollowingPrivatePermission(permissions.BasePermission):
     message = 'This account is private and you are not following it.'
 
     def has_permission(self, request, view):
-        other_user = Account.objects.get(username=view.kwargs.get('username'))
+        try:
+            other_user = Account.objects.get(username=view.kwargs.get('username'))
+        except Account.DoesNotExist:
+            return Http404
+
         if other_user == request.user:
             return True
         if not other_user.is_public:

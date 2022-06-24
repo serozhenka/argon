@@ -188,3 +188,18 @@ body {
     opacity: 0;
     transition: all .5s;
 }
+
+#post-comments-container {
+    overflow-y: scroll;
+    height: 10px;
+}
+
+#post-comments-container::-webkit-scrollbar{
+    width:5px;
+    background-color: var(--light-gray-color);
+}
+
+#post-comments-container::-webkit-scrollbar-thumb{
+    background: var(--gray-color);
+    border-radius: 5px;
+  }

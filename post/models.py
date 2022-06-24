@@ -59,6 +59,14 @@ class Comment(models.Model):
     def __str__(self):
         return f'{self.id} by {self.user.username}'
 
+    @property
+    def likes_count(self):
+        return CommentLike.objects.filter(comment=self, is_liked=True).count()
+
+    @property
+    def timestamp(self):
+        return str(naturaltime(self.created))
+
 
 class CommentLike(models.Model):
     """Like model to Comment model."""

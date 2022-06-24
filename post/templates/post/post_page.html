@@ -3,21 +3,38 @@
 
 {% block content %}
 
-    <section class="mt-3">
+    <section class="mt-5">
         <div class="row mx-0">
-            <div class="col-xl-8 col-lg-5 col-md-6 col-sm-8 col-10 mx-auto">
-                <div class="d-flex bg-light rounded box-shadow">
-                    <div class="col-7">
+            <div class="col-lg-9 col-md-8 col-sm-9 col-11 mx-auto">
+                <div class="row bg-light rounded box-shadow">
+                    <div class="col-lg-7 col-12 p-0">
                         {% if post.post_images.all.count == 1 %}
-                            <img src="{{ post.post_images.all.0.image.url }}" class="img-fluid" id="${post.id}_image_0" style="border-radius: 0!important">
+                            <div class="d-flex" style="max-height: 550px;">
+                                <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                            </div>
+                        {% else %}
+                            <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
+                                <div class="carousel-indicators" id="carouselButtonsIndicators">
+                                    {% for post_image in post.post_images.all %}
+                                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.counter0 == 0 %}active{% endif %}"></button>
+                                    {% endfor %}
+                                </div>
+                                <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+                                    {% for post_image in post.post_images.all %}
+                                        <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="max-height: 550px;">
+                                            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         {% endif %}
                     </div>
 
-                    <div class="col-5 d-flex flex-column">
+                    <div class="col-lg-5 col-12 d-flex flex-column p-0">
                         <div class="d-flex align-items-center p-3">
                             <div class="col-1 me-2">
                                 <a href="{% url 'account:account' username=post.user.username %}">
-                                    <img class="img-fluid rounded-circle" src="{{ post.user.image.url }}" alt="" id="{{ post.id }}_profile_image">
+                                    <img class="img-fluid rounded-circle" src="{{ post.user.image.url }}" alt="">
                                 </a>
                             </div>
                             <div class="col-11">
@@ -25,143 +42,135 @@
                             </div>
                         </div>
 
-                        <hr class="mt-0 mx-2"/>
+                        <hr class="my-0 mx-2"/>
 
-                        <div class="d-flex flex-grow-1">
-                            hello world
+                        <div class="d-flex-column flex-grow-1" id="post-comments-container" style="min-height: 200px">
+
+                            <div id="observe-container" class="d-block py-3"></div>
                         </div>
 
                         <hr class="mt-0 mx-2"/>
 
                         <div class="px-3 mb-2">
                             <div class="d-flex">
-                                <i class="fa-light text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="{{post.id}}" data-action=""></i>
+                                <i class="fa-light text-danger fa-heart fs-5 me-3" id="{{post.id}}_like" data-post_id="{{post.id}}" data-action="{% if is_liked %}dislike{% else %}like{% endif %}"></i>
                             </div>
 
-                          <div class="mt-1">
-                              <span class="fw-bold" id="{post.id}}_likes_count">{{post.likes_count}}</span> <span id="{{ post.id }}_like_word">like{{ post.likes_count|pluralize:'s' }}</span>
-                          </div>
+                            <div class="mt-1">
+                               <span class="fw-bold" id="{{ post.id }}_likes_count">{{post.likes_count}}</span> <span id="{{ post.id }}_like_word">like{{ post.likes_count|pluralize:'s' }}</span>
+                            </div>
 
-                          <p class="card-text fs-14px mt-1 mb-2 text-muted">{{post.description}}</p>
-                          <div class="text-muted fs-14px">{{post.timestamp}}</div>
+                            <p class="card-text fs-14px mt-1 mb-2 text-muted">{{post.description}}</p>
+                            <div class="text-muted fs-14px">{{post.timestamp}}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-{#                <div class="card mt-3 box-shadow">#}
-{#                    <div class="card-header d-flex align-items-center">#}
-{#                       <div class="col-1 me-2">#}
-{#                           <a href="{% url 'account:account' username=post.user.username %}">#}
-{#                               <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${post.id}_profile_image">#}
-{#                           </a>#}
-{#                       </div>#}
-{#                       <div class="col-11">#}
-{#                           <a href="{% url 'account:account' username=post.user.username %}" class="fw-bold link text-dark">${post.user.username}</a>#}
-{#                       </div>#}
-{#                    </div>#}
-{#                </div>#}
-            </div>
         </div>
     </section>
 
     <script>
 
+        {% for post_image in post.post_images.all %}
+            preLoadImage("{{ post_image.image.url }}", "{{ post.id }}_post_image_{{ forloop.counter0 }}")
+        {% endfor %}
 
-        {#function containerAppendData(data) {#}
-        {#  data.forEach(function(post, i) {#}
-        {#    let div = document.createElement('div')#}
-        {#    div.classList.add(`card`,`mt-3`, `box-shadow`)#}
-        {#    let user_href = "{% url 'account:account' username=123456789 %}".replace(123456789, post.user.username)#}
-        {##}
-        {#    div.innerHTML += `#}
-        {#       <div class="card-header d-flex align-items-center">#}
-        {#           <div class="col-1 me-2">#}
-        {#               <a href="${user_href}">#}
-        {#                   <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${post.id}_profile_image">#}
-        {#               </a>#}
-        {#           </div>#}
-        {#           <div class="col-11">#}
-        {#               <a href="${user_href}" class="fw-bold link text-dark">${post.user.username}</a>#}
-        {#           </div>#}
-        {#       </div>#}
-        {#    `#}
-        {##}
-        {#    if (post.post_images.length === 1) {#}
-        {#      div.innerHTML += `<img src="{% static 'images/default.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`#}
-        {#    } else {#}
-        {##}
-        {#      let carouselButtons = post.post_images.map((item, i) => {#}
-        {#        return `<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`#}
-        {#      }).join("")#}
-        {##}
-        {#      let carouselImages = post.post_images.map((item, i) => {#}
-        {#        return `<div class="carousel-item ${i === 0 ? "active" : ""}">#}
-        {#            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="${post.id}_image_${i}" style="border-radius: 0!important">#}
-        {#         </div>`#}
-        {#      }).join("")#}
-        {##}
-        {##}
-        {#      div.innerHTML += `#}
-        {#           <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">#}
-        {#              <div class="carousel-indicators" id="carouselButtonsIndicators">#}
-        {#                  ${carouselButtons}#}
-        {#              </div>#}
-        {#              <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">#}
-        {#                  ${carouselImages}#}
-        {#              </div>#}
-        {#          </div>#}
-        {#      `#}
-        {#    }#}
-        {##}
-        {#    div.innerHTML += `#}
-        {#       <div class="card-body">#}
-        {#          <div class="d-flex">#}
-        {#              <i class="${post.is_liked ? "fa-light": "fa-solid" } text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="${post.id}" data-action="${post.is_liked ? "dislike":"like" }"></i>#}
-        {#              <i class="fa-light fa-comment fs-5"></i>#}
-        {#          </div>#}
-        {##}
-        {#          <div class="mt-1">#}
-        {#              <span class="fw-bold" id="${post.id}_likes_count">${post.likes_count}</span> like${ post.likes_count === 1 ? "s" : "" }#}
-        {#          </div>#}
-        {##}
-        {#          <p class="card-text fs-14px mt-1 text-muted">${post.description}</p>#}
-        {#      </div>#}
-        {#    `#}
-        {#    postContainer.appendChild(div)#}
-        {##}
-        {#    for (let i = 0; i < post.post_images.length; i++) {#}
-        {#        preLoadImage(post.post_images[i].image, `${post.id}_image_${i}`)#}
-        {#        document.getElementById(`${post.id}_like`).addEventListener('click', postLike)#}
-        {#    }#}
-        {##}
-        {#    preLoadImage(post.user.image, `${post.id}_profile_image`)#}
-        {#  })#}
-        {# }#}
+        let limit = 10;
+        let postCommentsContainer = document.getElementById('post-comments-container')
+        let observeContainer = document.getElementById('observe-container')
+        let url = "{% url 'api:api-post-comments-list' post_id=post.id %}" + `?limit=${limit}&offset=0`
+        let postLikeUrl = "{% url 'post:post-like' post_id=123456789 %}"
+        document.getElementById("{{post.id}}_like").addEventListener('click', postLike)
 
-        {#function postLike(e) {#}
-        {#    let action = e.target.dataset.action#}
-        {#    if (!['like', 'dislike'].includes(action)) { return }#}
-        {##}
-        {#    fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {#}
-        {#      method: 'POST',#}
-        {#      headers: {#}
-        {#        'X-CSRFToken': "{{ csrf_token }}",#}
-        {#        'Content-Type': 'application/json',#}
-        {#      },#}
-        {#      body: JSON.stringify({'action': e.target.dataset.action})#}
-        {#    })#}
-        {#    .then(response => response.json())#}
-        {#    .then(data => {#}
-        {#      if (data.response_result === "success") {#}
-        {#          e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')#}
-        {#          e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')#}
-        {##}
-        {#          let likesCountBtn = document.getElementById(`${e.target.dataset.post_id}_likes_count`)#}
-        {#          likesCountBtn.innerText = String(Number(likesCountBtn.innerText) + (data.is_liked ? 1:-1))#}
-        {#      }#}
-        {#     })#}
-        {# }#}
+        let observer;
+        observer = new IntersectionObserver(callback, {
+          root: null,        // intersect with viewport
+          rootMargin: '0px', // no margin when computing intersections
+          threshold:  0,   // execute callback when every pixel is visible
+        })
+
+        function callback(entries) {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    getNextPage()
+                }
+            }
+        }
+
+        observer.observe(observeContainer)
+
+        function getNextPage() {
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              url = data.next
+              if (!url) { observer.unobserve(observeContainer); observeContainer.remove() }
+              containerAppendData(data.results)
+            })
+        }
+
+        function containerAppendData(data) {
+          data.forEach(function(comment, i) {
+
+            let div = document.createElement('div')
+            div.classList.add(`d-flex`,`p-3`)
+            let user_href = "{% url 'account:account' username=123456789 %}".replace(123456789, comment.user.username)
+
+            div.innerHTML += `
+               <div class="col-1">
+                   <a href="${user_href}">
+                       <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${comment.id}_comment_profile_image">
+                   </a>
+               </div>
+               <div class="col-10 ms-3">
+                    <a class="fw-bold link text-dark">${comment.user.username}</a>
+                   <div class="text-muted fs-14px" style="word-wrap: break-word">{{ "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i" }}</div>
+                   <div class="d-flex">
+                       <span class="fs-14px mt-2 text-muted">${comment.timestamp}</span>
+                   </div>
+               </div>
+               <div class="col-1">
+                   <i class="fa-light text-danger fa-heart"></i>
+               </div>
+            `
+
+            postCommentsContainer.insertBefore(div, observeContainer)
+            })
+
+            for (let i = 0; i < data.length; i++) {
+                preLoadImage(data[i].user.image, `${data[i].id}_comment_profile_image`)
+            }
+        }
+
+        async function postLike(e) {
+            let action = e.target.dataset.action
+            if (!['like', 'dislike'].includes(action)) { return }
+
+            this.removeEventListener(e.type, postLike)
+            await fetch(postLikeUrl.replace(123456789, "{{ post.id }}"), {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': "{{ csrf_token }}",
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({'action': e.target.dataset.action})
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.response_result === "success") {
+                  e.target.classList.remove(data.is_liked ? 'fa-light': 'fa-solid')
+                  e.target.classList.add(data.is_liked ? 'fa-solid': 'fa-light')
+                  e.target.dataset.action = data.is_liked ? 'dislike': 'like'
+
+                  let likesCountBtn = document.getElementById(`${e.target.dataset.post_id}_likes_count`)
+                  let likesWord = document.getElementById(`${e.target.dataset.post_id}_like_word`)
+                  likesCountBtn.innerText = String(Number(likesCountBtn.innerText) + (data.is_liked ? 1:-1))
+                  likesWord.innerText = data.likes_count === 1 ? "like": "likes";
+              }
+             })
+            this.addEventListener(e.type, postLike)
+         }
 
 
     </script>
