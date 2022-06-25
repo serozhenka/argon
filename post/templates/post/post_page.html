@@ -37,8 +37,11 @@
                                     <img class="img-fluid rounded-circle" src="{{ post.user.image.url }}" alt="">
                                 </a>
                             </div>
-                            <div class="col-11">
-                               <a href="{% url 'account:account' username=post.user.username %}" class="fw-bold link text-dark">{{ post.user.username }}</a>
+                            <div class="d-flex col-11 justify-content-between align-items-center">
+                                <a href="{% url 'account:account' username=post.user.username %}" class="fw-bold link text-dark">{{ post.user.username }}</a>
+                                {% if post.user == request.user %}
+                                    <a href="{% url 'post:post-edit' post_id=post.id %}" class="link text-muted me-2">Edit</a>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -61,7 +64,7 @@
                                <span class="fw-bold" id="{{ post.id }}_likes_count">{{post.likes_count}}</span> <span id="{{ post.id }}_like_word">like{{ post.likes_count|pluralize:'s' }}</span>
                             </div>
 
-                            <p class="card-text fs-14px mt-1 mb-2 text-muted">{{post.description}}</p>
+                            <p class="card-text fs-14px mt-1 mb-2 text-muted" style="word-break: break-all">{{post.description}}</p>
                             <div class="text-muted fs-14px">{{post.timestamp}}</div>
                         </div>
                     </div>
