@@ -24,6 +24,7 @@ def post_add_page(request):
 
     elif request.method == "POST":
         images = request.FILES.getlist('images')
+        if not images: return redirect('post:feed')
         description = request.POST.get('description')
         post = Post.objects.create(user=request.user, description=description)
 
@@ -103,8 +104,11 @@ def post_like_page(request, post_id):
                 'message': 'You are not currently following that user',
             })
 
-        post_like, created = PostLike.objects.get_or_create(user=request.user, post=post)
         action = json.loads(request.body).get('action')
+        if not action:
+            return JsonResponse({'response_result': 'error', 'message': 'No action provided'})
+
+        post_like, created = PostLike.objects.get_or_create(user=request.user, post=post)
 
         if action == "like" and not post_like.is_liked:
             post_like.is_liked = True
@@ -140,7 +144,7 @@ def post_comment_page(request, post_id):
                 'message': 'You are not currently following the post creator',
             })
 
-        if description := json.loads(request.body).get('description'):
+        if description := json.loads(request.body).get('description', None):
             comment = Comment.objects.create(user=request.user, post=post, description=description)
             return JsonResponse({'response_result': 'success', 'comment_id': comment.id})
         else:
@@ -165,8 +169,11 @@ def post_comment_like_page(request, comment_id):
                 'message': 'You are not currently following the post creator',
             })
 
-        comment_like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
         action = json.loads(request.body).get('action')
+        if not action:
+            return JsonResponse({'response_result': 'error', 'message': 'No action provided'})
+
+        comment_like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
 
         if action == "like" and not comment_like.is_liked:
             comment_like.is_liked = True
