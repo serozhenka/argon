@@ -19,6 +19,9 @@
         let observeContainer = document.getElementById('observe-container')
         let url = "{% url 'api:api-post-list' %}" + `?limit=${limit}&offset=0`
         let postLikeUrl = "{% url 'post:post-like' post_id=123456789 %}"
+        let postCommentsUrl = "{% url 'api:api-post-comments-list' post_id=123456789 %}" + `?limit=${limit}&offset=0`
+        let postCommentsUrlDict = {};
+        let postCommentsObserversDict = {};
 
         let observer;
         observer = new IntersectionObserver(callback, {
@@ -29,13 +32,13 @@
 
         function callback(entries) {
             for (const entry of entries) {
-                if (entry.isIntersecting) { getNextPage() }
+                if (entry.isIntersecting) { getNextPostsPage() }
             }
         }
 
         observer.observe(observeContainer)
 
-        function getNextPage() {
+        function getNextPostsPage() {
             fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -48,8 +51,9 @@
         function appendPosts(data) {
           data.forEach(function(post, i) {
             let div = document.createElement('div')
-            div.classList.add(`card`,`mt-3`, `box-shadow`)
+            div.classList.add(`card`,`mt-3`, `box-shadow`, 'position-relative')
             let user_href = "{% url 'account:account' username=123456789 %}".replace(123456789, post.user.username)
+            let post_href = "{% url 'post:post-page' post_id=123456789 %}".replace(123456789, post.id)
 
             div.innerHTML += `
                <div class="card-header d-flex align-items-center">
@@ -58,8 +62,15 @@
                            <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${post.id}_profile_image">
                        </a>
                    </div>
-                   <div class="col-11">
+                   <div class="d-flex col-11 justify-content-between align-items-center">
                        <a href="${user_href}" class="fw-bold link text-dark">${post.user.username}</a>
+                       <div class="btn-group dropstart">
+                          <i class="fa-light fa-ellipsis-vertical fs-5 me-2" data-bs-toggle="dropdown"></i>
+                          <ul class="dropdown-menu py-0">
+                            <li><a href="${post_href}" class="link text-dark d-block p-3 py-2" target="blank">Go to post</a></li>
+                          </ul>
+                       </div>
+                       {#<i class="fa-light fa-ellipsis-vertical fs-5 me-2"></i>#}
                    </div>
                </div>
             `
@@ -94,7 +105,7 @@
                <div class="card-body">
                   <div class="d-flex">
                       <i class="${post.is_liked_by_user ? "fa-solid" : "fa-light" } text-danger fa-heart fs-5 me-3" id="${post.id}_like" data-post_id="${post.id}" data-action="${post.is_liked_by_user ? "dislike":"like"}"></i>
-                      <i class="fa-light fa-comment fs-5" id="${post.id}_comment"></i>
+                      <i class="fa-light fa-comment fs-5" id="${post.id}_comment_button" data-post_id="${post.id}"></i>
                   </div>
 
                   <div class="mt-1">
@@ -105,17 +116,121 @@
                   <div class="text-muted fs-14px">${post.timestamp}</div>
               </div>
             `
+            div.innerHTML += `
+                <div class="flex-column bg-light position-absolute w-100 rounded" id="${post.id}_comment_container" style="display: none; height: 100%">
+                    <div class="position-relative p-3">
+                        <i class="fa-light fa-hand-back-point-left position-absolute" id="${post.id}_back_button" data-post_id="${post.id}"></i>
+                        <div class="fw-bold text-center fs-5">Comments</div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div class="input-group mb-0 mt-auto">
+                            <textarea class="form-control custom-scroll disable-focus m-0 bg-light text-muted" id="${post.id}-post-comment-description-field" data-post_id="${post.id}" maxlength="80" rows="1" placeholder="Add a comment..." style="overflow-y:scroll; overflow-x: hidden; border-radius: 0"></textarea>
+                            <button type="button" class="input-group-text bg-light fs-14px text-primary post-comment-button" id="${post.id}-post-comment-button" data-post_id="${post.id}" style="border-radius: 0">post</button>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column flex-grow-1 post-comments-container" id="${post.id}-post-comments-container" style="">
+
+                        <div id="${post.id}-observe-container" data-post_id="${post.id}" class="d-block py-3"></div>
+                    </div>
+                </div>
+            `
             postContainer.appendChild(div)
 
             for (let i = 0; i < post.post_images.length; i++) {
                 preLoadImage(post.post_images[i].image, `${post.id}_image_${i}`)
                 document.getElementById(`${post.id}_like`).addEventListener('click', postLike)
+
+                document.getElementById(`${post.id}_comment_button`).addEventListener('click', commentContainerSlide)
+                document.getElementById(`${post.id}_back_button`).addEventListener('click', commentContainerSlide)
+                document.getElementById(`${post.id}-post-comment-button`).addEventListener('click', postComment)
+                setupDescriptionField(document.getElementById(`${post.id}-post-comment-description-field`))
             }
 
+            createObserveContainer(`${post.id}`)
             preLoadImage(post.user.image, `${post.id}_profile_image`)
           })
         }
 
+        function getNextCommentsPageWithPostId(post_id) {
+            let url;
+            if (`${post_id}` in postCommentsUrlDict) {
+                url = postCommentsUrlDict[`${post_id}`]
+            } else {
+                url = postCommentsUrl.replace(123456789, post_id)
+            }
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              postCommentsUrlDict[`${post_id}`] = data.next
+              appendComments(data.results, `${post_id}`)
+              if (!data.next) {
+                let observeContainer = document.getElementById(`${post_id}-observe-container`)
+                console.log(observeContainer)
+                postCommentsObserversDict[`${post_id}`].unobserve(observeContainer);
+                observeContainer.remove()
+                delete postCommentsUrlDict[`${post_id}`]
+              }
+            })
+        }
+
+        function appendComments(data, post_id) {
+            let postCommentsContainer = document.getElementById(`${post_id}-post-comments-container`)
+            let observeContainer =  document.getElementById(`${post_id}-observe-container`)
+
+            data.forEach(function(comment, i) {
+                let commentDiv = commentElement(comment.id, comment.user.username, comment.description, comment.timestamp, comment.likes_count, comment.is_liked_by_user)
+                postCommentsContainer.insertBefore(commentDiv, observeContainer)
+            })
+
+            for (let i = 0; i < data.length; i++) {
+                commentsButtonEventListeners(data[i].id, data[i].user.username)
+                preLoadImage(data[i].user.image, `${data[i].id}_comment_profile_image`)
+            }
+        }
+
+        function createObserveContainer(post_id) {
+          let observer = new IntersectionObserver(observerCallback, {
+              root: null,        // intersect with viewport
+              rootMargin: '0px', // no margin when computing intersections
+              threshold:  0,   // execute callback when every pixel is visible
+          })
+
+          observer.observe(document.getElementById(`${post_id}-observe-container`))
+          postCommentsObserversDict[`${post_id}`] = observer
+        }
+
+        function observerCallback(entries) {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                  getNextCommentsPageWithPostId(entry.target.dataset.post_id)
+                }
+            }
+        }
+
+        async function commentContainerSlide(e) {
+            let post_id = e.target.dataset.post_id
+            let commentContainer = $(`#${post_id}_comment_container`)
+            commentContainer.toggleClass('d-flex');
+            commentContainer.slideToggle("slow")
+            await commentContainerReload(`${post_id}-post-comments-container`, post_id)
+
+            getNextCommentsPageWithPostId(post_id)
+        }
+
+        async function commentContainerReload(containerId, post_id) {
+            let container = document.getElementById(containerId)
+
+            let observeDiv = document.createElement('div')
+            observeDiv.classList.add('d-block', 'py-3')
+            observeDiv.id = `${post_id}-observe-container`
+            observeDiv.dataset.post_id = post_id
+
+            container.innerHTML = ""
+            container.appendChild(observeDiv)
+            postCommentsObserversDict[`${post_id}`].observe(observeDiv)
+            delete postCommentsUrlDict[`${post_id}`]
+        }
 
     </script>
 {% endblock content %}

@@ -189,25 +189,25 @@ body {
     transition: all .5s;
 }
 
-#post-comments-container {
+.post-comments-container {
     overflow-y: scroll;
     height: 10px;
 }
 
-#post-comments-container::-webkit-scrollbar{
+.post-comments-container::-webkit-scrollbar{
     width:5px;
     background-color: var(--light-gray-color);
 }
 
-#post-comments-container::-webkit-scrollbar-thumb{
+.post-comments-container::-webkit-scrollbar-thumb{
     background: var(--gray-color);
     border-radius: 5px;
 }
 
-#post-comment-button {
+.post-comment-button {
     transition: all .2s;
 }
 
-#post-comment-button:hover {
+.post-comment-button:hover {
     background-color: var(--light-gray-color)!important;
 }

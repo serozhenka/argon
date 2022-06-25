@@ -106,8 +106,8 @@
                 <div class="col-8 mx-auto">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <div class="text-center">1</div>
-                            <div class="fw-bold">post{{ 1|pluralize }}</div>
+                            <div class="text-center">{{ posts_count }}</div>
+                            <div class="fw-bold">post{{ posts_count|pluralize }}</div>
                         </div>
                         <a class="d-block link text-dark" href="{% url 'account:account-followers' username=account.username %}">
                             <div class="text-center">{{ followers_count }}</div>

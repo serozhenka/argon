@@ -105,6 +105,7 @@ def account_page(request, username):
             context['post_images'].append([image, image.post.likes_count])
 
         context["account"] = account
+        context["posts_count"] = Post.objects.filter(user=account).count()
         return render(request, 'users/account.html', context=context)
 
 @login_required(login_url=reverse_lazy('account:login'))

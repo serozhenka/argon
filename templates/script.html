@@ -19,9 +19,10 @@
     async function postLike(e) {
         let action = e.target.dataset.action
         if (!['like', 'dislike'].includes(action)) { return }
+        let url = "{% url 'post:post-like' post_id=123456789 %}".replace(123456789, e.target.dataset.post_id)
 
         this.removeEventListener(e.type, postLike)
-        await fetch(postLikeUrl.replace(123456789, e.target.dataset.post_id), {
+        await fetch(url, {
           method: 'POST',
           headers: simplePostHeader,
           body: JSON.stringify({'action': e.target.dataset.action})
@@ -40,9 +41,10 @@
 
     async function postComment(e) {
         let post_id = e.target.dataset.post_id
-        let descriptionField = document.getElementById("post-comment-description-field")
+        let descriptionField = document.getElementById(`${post_id}-post-comment-description-field`)
+        let postCommentsContainer = document.getElementById(`${post_id}-post-comments-container`)
         if (!descriptionField.value) { return }
-        let url = postCommentUrl.replace(123456789, post_id)
+        let url = "{% url 'post:post-comment' post_id=123456789 %}".replace(123456789, post_id)
 
         this.removeEventListener(e.type, postComment)
         await fetch(url, {
@@ -54,11 +56,13 @@
         .then(data => {
           if (data.response_result === "success") {
               let commentDiv = commentElement(data.comment_id, "{{ request.user.username }}", descriptionField.value, "now", 0, false)
-              postCommentsContainer.insertBefore(commentDiv, postCommentsContainer.childNodes[1])
+              let insertPosition = postCommentsContainer.childNodes[0].tagName !== "DIV" ? 1: 0;
+              postCommentsContainer.insertBefore(commentDiv, postCommentsContainer.childNodes[insertPosition])
 
               commentsButtonEventListeners(data.comment_id, "{{ request.user.username }}")
               preLoadImage("{{ request.user.image.url }}",`${data.comment_id}_comment_profile_image`)
               descriptionField.value = ""
+              $(`#${post_id}-post-comments-container`).animate({ scrollTop: 0 }, "slow");
           }
          })
         this.addEventListener(e.type, postComment)
@@ -69,7 +73,7 @@
         let action = e.target.dataset.action
         let comment_id = e.target.dataset.comment_id
         if (!['like', 'dislike'].includes(action)) { return }
-        let url = postCommentLikeUrl.replace(123456789, comment_id)
+        let url = "{% url 'post:post-comment-like' comment_id=123456789 %}".replace(123456789, comment_id)
 
         this.removeEventListener(e.type, postCommentLike)
         await fetch(url, {
@@ -90,7 +94,7 @@
 
     async function postCommentRemove(e) {
         let comment_id = e.target.dataset.comment_id
-        let url = postCommentRemoveUrl.replace(123456789, comment_id)
+        let url = "{% url 'post:post-comment-remove' comment_id=123456789 %}".replace(123456789, comment_id)
 
         this.removeEventListener(e.type, postCommentRemove)
         await fetch(url, {
@@ -151,5 +155,15 @@
         }
     }
 
+    function setupDescriptionField(field) {
+        field.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault()}
+        })
+        field.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey && field.value.trim() !== "") {
+                document.getElementById(`${e.target.dataset.post_id}-post-comment-button`).click()
+            }
+        })
+    }
 
 </script>
