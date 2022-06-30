@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from chat.models import ChatRoom
 from users.models import Account
 from post.models import Post, PostImage, PostLike, Comment, CommentLike
 
@@ -19,6 +20,7 @@ class SimpleAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ['username', 'name', 'image']
+
 
 class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,6 +44,7 @@ class CommentSerializer(serializers.ModelSerializer):
         except CommentLike.DoesNotExist:
             return False
 
+
 class PostSerializer(serializers.ModelSerializer):
     user = SimpleAccountSerializer()
     post_images = PostImageSerializer(many=True)
@@ -60,3 +63,14 @@ class PostSerializer(serializers.ModelSerializer):
         except PostLike.DoesNotExist:
             return False
 
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+    other_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatRoom
+        fields = ['other_user', ]
+
+    def get_other_user(self, obj):
+        other_user = obj.other_user(self.context['request'].user)
+        return  SimpleAccountSerializer(other_user).data

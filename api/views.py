@@ -4,10 +4,12 @@ from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 
 from .permissions import FollowingPrivatePermission
-from .serializers import AccountSerializer, PostSerializer, CommentSerializer
+from .serializers import AccountSerializer, PostSerializer, CommentSerializer, ChatRoomSerializer
+from chat.models import ChatRoom
 from follow.models import Followers, Following
 from post.models import Post, Comment
 from users.models import Account
+
 
 class FollowersApiView(generics.ListAPIView):
     serializer_class = AccountSerializer
@@ -20,6 +22,7 @@ class FollowersApiView(generics.ListAPIView):
             raise Http404
         return Followers.objects.get(user=user).users_followers.all()
 
+
 class FollowingApiView(generics.ListAPIView):
     serializer_class = AccountSerializer
     pagination_class = LimitOffsetPagination
@@ -30,6 +33,7 @@ class FollowingApiView(generics.ListAPIView):
         except Account.DoesNotExist:
             raise Http404
         return Following.objects.get(user=user).users_following.all()
+
 
 class PostUserApiView(generics.ListAPIView):
     serializer_class = PostSerializer
@@ -43,6 +47,7 @@ class PostUserApiView(generics.ListAPIView):
             raise Http404
         return Post.objects.filter(user=user).order_by('-created')
 
+
 class PostApiView(generics.ListAPIView):
     serializer_class = PostSerializer
     pagination_class = LimitOffsetPagination
@@ -50,6 +55,7 @@ class PostApiView(generics.ListAPIView):
     def get_queryset(self):
         following_users = Following.objects.get(user=self.request.user).users_following.all()
         return Post.objects.filter(user__in=following_users).order_by('-created')
+
 
 class PostCommentsApiView(generics.ListAPIView):
     serializer_class = CommentSerializer
@@ -67,3 +73,15 @@ class PostCommentsApiView(generics.ListAPIView):
             Q(user=user),
             output_field=BooleanField()
         )).order_by('-by_user', '-created')
+
+
+class ChatRoomsApiView(generics.ListAPIView):
+    serializer_class = ChatRoomSerializer
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        chat_rooms = ChatRoom.objects.filter(
+            Q(user1=self.request.user) |
+            Q(user2=self.request.user)
+        )
+        return chat_rooms
