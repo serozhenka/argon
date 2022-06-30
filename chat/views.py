@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.urls import reverse_lazy
 
 from users.models import Account
@@ -19,4 +20,5 @@ def chat_page(request, username=None):
             other_user = room.other_user(request.user)
             context['room_id'] = room.id
             context['other_user'] = other_user
+            context['debug'] = settings.DEBUG
         return render(request, 'chat/chat_page.html', context=context)

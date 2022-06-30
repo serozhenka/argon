@@ -4,7 +4,7 @@
     --gray-color: #bebebe;
     --semi-gray-color: #818181;
     --dark-gray-color: #3f3f3f;
-    --light-blue: #b8e3f8;
+    --light-blue-color: #e1eff6;
     --link-color: #19a5e8;
     --hover-link-color: #0f6a94;
 }
@@ -21,6 +21,14 @@ body {
 
 .black-color {
     color: black;
+}
+
+.bg-light-blue {
+    background-color: var(--light-blue-color);
+}
+
+.bg-light-gray {
+    background-color: var(--light-gray-color);
 }
 
 .link-color {
@@ -42,6 +50,10 @@ body {
 
 .fs-14px {
     font-size: 14px!important;
+}
+
+.fs-12px {
+    font-size: 12px!important;
 }
 
 /* Authentication page */
@@ -224,4 +236,10 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--gray-color);
     border-radius: 5px;
+}
+
+.message-box {
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-all;
 }

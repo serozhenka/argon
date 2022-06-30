@@ -43,7 +43,7 @@
         let post_id = e.target.dataset.post_id
         let descriptionField = document.getElementById(`${post_id}-post-comment-description-field`)
         let postCommentsContainer = document.getElementById(`${post_id}-post-comments-container`)
-        if (!descriptionField.value) { return }
+        if (!descriptionField.value.trim()) { return }
         let url = "{% url 'post:post-comment' post_id=123456789 %}".replace(123456789, post_id)
 
         this.removeEventListener(e.type, postComment)

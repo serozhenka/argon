@@ -21,35 +21,16 @@
                                 <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="fw-bold link text-dark">{{ other_user.username }}</a>
                             </div>
                         {% endif %}
-                        <div class="d-flex flex-column-reverse flex-grow-1 p-2 custom-scrollbar" id="chat-messages-container" style="overflow-y: auto; height: 100%">
+                        <div class="d-flex flex-column-reverse flex-grow-1 p-2 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
 
-                            <div class="d-flex col-8 align-self-end py-2 px-3 rounded mt-3" style="background-color: var(--light-blue)">
-                                <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ad eum minus nam officiis perferendis quidem quis quod, rem rerum tenetur totam velit voluptatem! Culpa cupiditate natus necessitatibus nihil nisi! Dolorem.</div>
+
+                            <div class="d-flex col-8 align-self-end justify-content-end">
+                                <div class="py-2 px-3 rounded mt-3 bg-light-blue">
+                                    <div class="message-box">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ad eum minus nam officiis perferendis quidem quis quod, rem rerum tenetur totam velit voluptatem! Culpa cupiditate natus necessitatibus nihil nisi! Dolorem.</div>
+                                    <div class="text-end fs-12px text-muted mt-1">18:27, May 12</div>
+                                </div>
                             </div>
 
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
 
                             <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
                                 <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
@@ -78,6 +59,28 @@
         const chatRoomsContainer = document.getElementById("chat-room-container")
         let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
         const observeContainer = document.getElementById("observe-container")
+        const messageButton = document.getElementById("message-button")
+        const messageField = document.getElementById("message-textarea")
+        const chatMessagesContainer = document.getElementById('chat-messages-container')
+
+        messageButton.addEventListener('click', function(e) {
+            if (messageField.value.trim()) {
+              sendChatMessage(messageField.value)
+              messageField.value = ""
+            }
+        })
+
+        setupMessageField(messageField)
+
+        function setupMessageField(field) {
+            field.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault()}
+            })
+            field.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && field.value.trim() !== "") { messageButton.click() }
+            })
+        }
+
 
         let observer;
         observer = new IntersectionObserver(callback, {
@@ -132,5 +135,79 @@
               })
             }
 
+        {% if room_id %}
+            let roomId = "{{ room_id }}"
+            let ws_scheme = window.location.protocol === "http:" ? "ws:" : "wss:"
+            let ws_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug %}8001{% endif %}8000" + `/chat/${roomId}/`
+            let chatSocket = new WebSocket(ws_path)
+            setupWebsocket()
+
+            function setupWebsocket() {
+                chatSocket.onopen = function(e) {
+                    console.log('websocket opened')
+                    chatSocket.send(JSON.stringify({
+                        'command': 'join',
+                        'room_id': roomId,
+                    }))
+                }
+
+                chatSocket.onmessage = function(e) {
+                    let data = JSON.parse(e.data)
+                    switch (data.msg_type) {
+                        case "standard_message": appendChatMessage(data, true, true); break;
+                        case "error": handleError(data.code, data.message); break;
+                    }
+                }
+
+                chatSocket.onclose = (e) => {console.log("Websocket disconnected")}
+                chatSocket.onerror = (e) => {console.log("Unknown error happened")}
+            }
+
+
+            function handleError(code, message) {
+                console.log(`Server send back a response with code: ${code} and message: ${message}.`)
+                chatSocket.close()
+            }
+
+
+            function appendChatMessage(data, isNew, scroll) {
+                let messageElement = createMessageElement(data)
+
+                if (isNew) {
+                  let insertPosition = chatMessagesContainer.firstChild.tagName === "DIV" ? 0 : 1;
+                  chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.childNodes[insertPosition])
+                }
+            }
+
+
+            function createMessageElement(data) {
+                let div = document.createElement('div')
+                div.classList.add('d-flex', 'col-8', 'mt-3', 'justify-content-end')
+
+                "{{ request.user.username }}" === data.username ? div.classList.add('align-self-end') : 1;
+
+                div.innerHTML = `
+                    <div class="py-2 px-3 rounded ${'{{ request.user.username }}' === data.username ? "bg-light-blue" : "bg-light-gray"}">
+                        <div class="message-box">${data.message}</div>
+                        <div class="text-end fs-12px text-muted mt-1">18:27, May 12</div>
+                    </div>
+                `
+
+                return div
+            }
+
+        {% endif %}
+
+    </script>
+
+    {# Sending request to the consumer  #}
+    <script>
+        function sendChatMessage(message) {
+            chatSocket.send(JSON.stringify({
+                'command': 'send',
+                'message': message,
+                'room_id': roomId,
+            }))
+        }
     </script>
 {% endblock content %}
