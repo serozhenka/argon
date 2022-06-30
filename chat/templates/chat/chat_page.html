@@ -7,8 +7,9 @@
         <div class="row mx-0">
             <div class="col-lg-9 col-md-8 col-sm-9 col-11 mx-auto" style="min-height: 600px; max-height: 600px">
                 <div class="row bg-light rounded box-shadow h-100">
-                    <div class="col-lg-4 p-0 border-end">
+                    <div class="col-lg-4 p-0 border-end custom-scrollbar" id="chat-room-container" style="overflow-y: auto; height: 100%">
 
+                        <div id="observe-container" class="d-block py-3"></div>
                     </div>
 
                     <div class="col-lg-8 col-12 d-flex flex-column p-0">
@@ -22,6 +23,62 @@
 
     <script>
 
+    const limit = 10
+    const chatRoomsContainer = document.getElementById("chat-room-container")
+    let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
+    const observeContainer = document.getElementById("observe-container")
+
+    let observer;
+    observer = new IntersectionObserver(callback, {
+      root: null,        // intersect with viewport
+      rootMargin: '0px', // no margin when computing intersections
+      threshold:  0,   // execute callback when every pixel is visible
+    })
+
+    function callback(entries) {
+        for (const entry of entries) {
+            if (entry.isIntersecting) { getNextRoomsPage() }
+        }
+    }
+
+    observer.observe(observeContainer)
+
+
+    function getNextRoomsPage() {
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          url = data.next
+          appendChatRoom(data.results)
+          if (!url) {
+            observer.unobserve(observeContainer)
+            observeContainer.remove()
+          }
+        })
+    }
+
+    function appendChatRoom(data) {
+          data.forEach(function(room, i) {
+            let div = document.createElement('div')
+            div.classList.add('d-flex', 'align-items-center', 'p-3', 'hover-block')
+            div.innerHTML = `
+                <div class="col-2 me-2">
+                    <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${room.id}_profile_image">
+                </div>
+                <div class="col-10 d-flex flex-column">
+                    <div class="fw-bold">
+                        ${room.other_user.username}
+                    </div>
+                    <div>
+                        some text
+                    </div>
+                </div>
+            `
+
+            observeContainer.insertAdjacentElement('beforebegin', div)
+            preLoadImage(`${room.other_user.image}`, `${room.id}_profile_image`)
+          })
+        }
 
     </script>
 {% endblock content %}

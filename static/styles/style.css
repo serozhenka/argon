@@ -210,3 +210,17 @@ body {
 .post-comment-button:hover {
     background-color: var(--light-gray-color)!important;
 }
+
+.hover-block:hover {
+    background-color: var(--light-gray-color);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width:5px;
+    background-color: var(--light-gray-color);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--gray-color);
+    border-radius: 5px;
+}

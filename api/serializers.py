@@ -69,7 +69,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatRoom
-        fields = ['other_user', ]
+        fields = ['other_user', 'id']
 
     def get_other_user(self, obj):
         other_user = obj.other_user(self.context['request'].user)
