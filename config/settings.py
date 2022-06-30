@@ -33,12 +33,14 @@ INSTALLED_APPS = [
     # external apps
     'rest_framework',
     'algoliasearch_django',
+    'channels',
 
     # internal apps
     'users.apps.UsersConfig',
     'follow.apps.FollowConfig',
     'api.apps.ApiConfig',
     'post.apps.PostConfig',
+    'chat.apps.ChatConfig',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +74,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 
 # Database
@@ -164,3 +167,12 @@ USE_THOUSAND_SEPARATOR = True
 THOUSAND_SEPARATOR = ','
 DECIMAL_SEPARATOR = '.'
 NUMBER_GROUPING = 3
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}

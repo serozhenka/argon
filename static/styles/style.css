@@ -191,7 +191,6 @@ body {
 
 .post-comments-container {
     overflow-y: scroll;
-    height: 10px;
 }
 
 .post-comments-container::-webkit-scrollbar{
