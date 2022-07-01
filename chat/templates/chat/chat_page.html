@@ -21,8 +21,7 @@
                                 <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="fw-bold link text-dark">{{ other_user.username }}</a>
                             </div>
                         {% endif %}
-                        <div class="d-flex flex-column-reverse flex-grow-1 p-2 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
-
+                        <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
 
                             <div class="d-flex col-8 align-self-end justify-content-end">
                                 <div class="py-2 px-3 rounded mt-3 bg-light-blue">
@@ -30,11 +29,7 @@
                                     <div class="text-end fs-12px text-muted mt-1">18:27, May 12</div>
                                 </div>
                             </div>
-
-
-                            <div class="d-flex col-8 py-2 px-3 rounded mt-3" style="background-color: var(--light-gray-color); word-break: break-all">
-                                <div>ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff</div>
-                            </div>
+                            
                         </div>
                         {% if room_id %}
                             <div class="input-group p-3">
@@ -155,6 +150,7 @@
                     let data = JSON.parse(e.data)
                     switch (data.msg_type) {
                         case "standard_message": appendChatMessage(data, true, true); break;
+                        case "join": console.log("success"); break;
                         case "error": handleError(data.code, data.message); break;
                     }
                 }
@@ -182,9 +178,9 @@
 
             function createMessageElement(data) {
                 let div = document.createElement('div')
-                div.classList.add('d-flex', 'col-8', 'mt-3', 'justify-content-end')
+                div.classList.add('d-flex', 'col-8', 'mt-3')
 
-                "{{ request.user.username }}" === data.username ? div.classList.add('align-self-end') : 1;
+                "{{ request.user.username }}" === data.username ? div.classList.add('align-self-end', 'justify-content-end') : 1;
 
                 div.innerHTML = `
                     <div class="py-2 px-3 rounded ${'{{ request.user.username }}' === data.username ? "bg-light-blue" : "bg-light-gray"}">
@@ -200,14 +196,19 @@
 
     </script>
 
-    {# Sending request to the consumer  #}
-    <script>
-        function sendChatMessage(message) {
-            chatSocket.send(JSON.stringify({
-                'command': 'send',
-                'message': message,
-                'room_id': roomId,
-            }))
-        }
-    </script>
+    {% if room_id %}
+
+        {# Sending request to the consumer  #}
+        <script>
+
+            function sendChatMessage(message) {
+                chatSocket.send(JSON.stringify({
+                    'command': 'send',
+                    'message': message,
+                    'room_id': roomId,
+                }))
+            }
+
+        </script>
+    {% endif %}
 {% endblock content %}
