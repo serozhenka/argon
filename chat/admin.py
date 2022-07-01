@@ -14,7 +14,10 @@ class ChatRoomMessageAdmin(admin.ModelAdmin):
 
 
 class ChatRoomMessageBodyAdmin(admin.ModelAdmin):
-    list_display = ('text', 'is_edited')
+    list_display = ('id', 'text_sliced', 'is_edited')
+
+    def text_sliced(self, obj):
+        return obj.text[0:50]
 
 
 admin.site.register(ChatRoom, ChatRoomAdmin)

@@ -1,16 +1,16 @@
+import asyncio
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from typing import Optional
 
 from .constants import MsgType
 from .exceptions import ClientError
-from .models import ChatRoom
+from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
-        self.room_id = None
-        self.group_name = None
+        self.room, self.group_name = None, None
         super().__init__(*args, **kwargs)
 
     async def connect(self):
@@ -28,7 +28,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.join_room(room_id=room_id)
         elif command == "send":
             message = content.get('message')
-            if message and room_id == self.room_id:
+            
+            if message and self.room and room_id == str(self.room.id):
+                asyncio.create_task(self.save_chat_room_message(message=message))
                 await self.channel_layer.group_send(self.group_name, {
                     'type': 'chat.message',
                     'message': message,
@@ -39,10 +41,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code: int):
         """Called when client disconnects or connection is lost."""
-        await self.leave_room(self.room_id) if self.room_id else None
+        await self.leave_room(self.room.id) if self.room else None
         await self.close(code)
 
     async def chat_message(self, event):
+        """Method to send message to the client."""
+        
         await self.send_json({
             'msg_type': MsgType.STANDARD_MESSAGE,
             'message': event.get('message'),
@@ -50,12 +54,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         })
 
     # helper functions
-    async def join_room(self, room_id: str):
+    async def join_room(self, room_id: str) -> None:
         """Called when client send a text frame with join command."""
 
         try:
             room = await self.get_chat_room_or_error(room_id)
-            self.room_id = str(room.id)
+            self.room = room
             self.group_name = room.group_name
             await self.channel_layer.group_add(room.group_name, self.channel_name)
             await self.send_json({'msg_type': MsgType.JOIN, 'room_id': room.id})
@@ -63,12 +67,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except ClientError as e:
             await self.handle_error(e)
 
-    async def leave_room(self, room_id):
+    async def leave_room(self, room_id: str) -> None:
         """Called when client disconnects or connection is lost."""
 
         try:
             room = await self.get_chat_room_or_error(room_id)
-            self.room_id, self.group_name = None, None
+            self.room, self.group_name = None, None
             await self.channel_layer.group_discard(room.group_name, self.channel_name)
 
         except ClientError as e:
@@ -81,7 +85,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(e.__dict__)
 
     @database_sync_to_async
-    def get_chat_room_or_error(self, room_id: str) -> Optional[ChatRoom]:
+    def get_chat_room_or_error(self, room_id: str) -> ChatRoom:
+        """Method to get a chat room or raise error."""
+
         if not room_id:
             raise ClientError(1000, "No room id given")
         try:
@@ -93,6 +99,16 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             raise ClientError(1000, "You have no permission to join this room")
 
         return room
+
+    @database_sync_to_async
+    def save_chat_room_message(self, message) -> None:
+        """Method creating chat room message along with chat room message body."""
+
+        body = ChatRoomMessageBody.objects.create(text=message)
+        ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
+
+    
+    
 
 
 
