@@ -2,10 +2,14 @@ import asyncio
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.core.paginator import Paginator
+from django.utils import timezone
+from typing import Tuple, List, Union, Optional
 
-from .constants import MsgType
+from .constants import MsgType, CHAT_ROOM_MESSAGE_PAGE_SIZE
 from .exceptions import ClientError
 from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
+from .utils import calculate_timestamp, ChatRoomMessageSerializer
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -26,6 +30,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         if command == "join":
             await self.join_room(room_id=room_id)
+
         elif command == "send":
             message = content.get('message')
             
@@ -35,7 +40,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     'type': 'chat.message',
                     'message': message,
                     'username': self.scope['user'].username,
+                    'timestamp': calculate_timestamp(timezone.now()),
                 })
+
+        elif command == "load_messages":
+            page_number = content.get('page_number')
+
+            if self.room and room_id == str(self.room.id) and page_number:
+                messages, new_page_number = await self.get_chat_room_messages(page_number)
+                if messages:
+                    await self.load_messages(messages, new_page_number)
+                else:
+                    await self.pagination_exhausted()
 
         print("receiving json")
 
@@ -51,7 +67,22 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'msg_type': MsgType.STANDARD_MESSAGE,
             'message': event.get('message'),
             'username': event.get('username'),
+            'timestamp': event.get('timestamp'),
         })
+
+    async def load_messages(self, messages, new_page_number):
+        """Method to send new loaded messages to the client."""
+
+        await self.send_json({
+            'msg_type': MsgType.LOAD_MESSAGES,
+            'messages': messages,
+            'new_page_number': new_page_number,
+        })
+
+    async def pagination_exhausted(self):
+        """Method called when no more chat room messages to load."""
+
+        await self.send_json({'msg_type': MsgType.PAGINATION_EXHAUSTED})
 
     # helper functions
     async def join_room(self, room_id: str) -> None:
@@ -106,6 +137,36 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         body = ChatRoomMessageBody.objects.create(text=message)
         ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
+
+    @database_sync_to_async
+    def get_chat_room_messages(self, page_number: Union[str, int]) -> Tuple[Optional[List], Optional[int]]:
+        """
+        Method to get old chat room messages and return them based on page number
+        and return them encoded in json.
+        """
+        try:
+            page_number = int(page_number)
+        except ValueError:
+            self.handle_error(ClientError(1000, "Page number is not an integer"))
+
+        try:
+            qs = ChatRoomMessage.objects.filter(room_id=self.room.id).select_related('body').order_by('-timestamp')
+            paginator = Paginator(qs, CHAT_ROOM_MESSAGE_PAGE_SIZE)
+
+            if page_number <= paginator.num_pages:
+                serializer = ChatRoomMessageSerializer()
+                serialized = serializer.serialize(paginator.page(page_number).object_list)
+
+                return serialized, page_number + 1
+            else:
+                raise ClientError(1000, "Unable to access that page")
+
+        except ClientError as e:
+            self.handle_error(e)
+
+        return None, None
+
+
 
     
     

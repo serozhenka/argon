@@ -7,6 +7,7 @@ def get_message_body_image_path(instance: 'ChatRoomMessageBody', filename: str) 
     return f'chat_message_images/{str(instance.pk)}_{filename}'
 
 class ChatRoomManager(models.Manager):
+
     def get_create(self, user1, user2):
         room = self.model.objects.filter(
             (Q(user1=user1) & Q(user2=user2)) |
