@@ -1,5 +1,5 @@
 from django.http import Http404
-from django.db.models import ExpressionWrapper, Q, BooleanField
+from django.db.models import ExpressionWrapper, Q, BooleanField, F
 from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -83,5 +83,5 @@ class ChatRoomsApiView(generics.ListAPIView):
         chat_rooms = ChatRoom.objects.filter(
             Q(user1=self.request.user) |
             Q(user2=self.request.user)
-        )
+        ).order_by('-last_message__timestamp').order_by(F('last_message').desc(nulls_last=True))
         return chat_rooms

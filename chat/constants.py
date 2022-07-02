@@ -1,6 +1,6 @@
 from enum import Enum
 
-CHAT_ROOM_MESSAGE_PAGE_SIZE = 10
+CHAT_ROOM_MESSAGE_PAGE_SIZE = 50
 
 
 class MsgType(str, Enum):

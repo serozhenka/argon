@@ -19,6 +19,10 @@ body {
     color: var(--gray-color);
 }
 
+.semi-gray-color {
+    color: var(--semi-gray-color);
+}
+
 .black-color {
     color: black;
 }
@@ -242,4 +246,10 @@ body {
     display: inline-block;
     max-width: 100%;
     word-break: break-all;
+}
+
+.text-overflow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

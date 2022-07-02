@@ -124,8 +124,11 @@
                         <div class="fw-bold">
                             ${room.other_user.username}
                         </div>
-                        <div>
-                            some text
+                        <div class="fs-14px text-overflow">
+                            ${room.last_message ?
+                            `<span class="semi-gray-color"">${room.last_message.user.username}:</span>
+                            <span>${room.last_message.body.text}</span>` : " "
+                            }
                         </div>
                     </div>
                 `

@@ -1,9 +1,8 @@
 from rest_framework import serializers
 
-from chat.models import ChatRoom
+from chat.models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 from users.models import Account
 from post.models import Post, PostImage, PostLike, Comment, CommentLike
-
 
 class AccountSerializer(serializers.ModelSerializer):
     is_following_by_request_user = serializers.SerializerMethodField()
@@ -32,7 +31,7 @@ class CommentSerializer(serializers.ModelSerializer):
     is_liked_by_user = serializers.SerializerMethodField()
 
     class Meta:
-        model = Post
+        model = Comment
         fields = ['user', 'description', 'is_liked_by_user', 'likes_count', 'id', 'timestamp']
 
     def get_is_liked_by_user(self, obj):
@@ -63,14 +62,29 @@ class PostSerializer(serializers.ModelSerializer):
         except PostLike.DoesNotExist:
             return False
 
+class ChatRoomBodySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ChatRoomMessageBody
+        fields = ['text', 'image', 'is_edited']
+
+class ChatRoomMessageSerializer(serializers.ModelSerializer):
+    user = SimpleAccountSerializer()
+    body = ChatRoomBodySerializer()
+
+    class Meta:
+        model = ChatRoomMessage
+        fields = ['user', 'body', 'timestamp', 'is_read']
+
 
 class ChatRoomSerializer(serializers.ModelSerializer):
     other_user = serializers.SerializerMethodField()
+    last_message = ChatRoomMessageSerializer()
 
     class Meta:
         model = ChatRoom
-        fields = ['other_user']
+        fields = ['other_user', 'last_message']
 
     def get_other_user(self, obj):
         other_user = obj.other_user(self.context['request'].user)
-        return  SimpleAccountSerializer(other_user).data
+        return SimpleAccountSerializer(other_user).data
