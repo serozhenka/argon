@@ -4,13 +4,13 @@
 {% block content %}
 
 
-    <section class="my-4">
+    <section class="my-4" id="section">
         <div class="row mx-0">
             <div class="col-lg-9 {% if room_id %}col-11{% else %}col-10{% endif %} mx-auto" style="min-height: 600px; max-height: 600px">
                 <div class="row bg-light rounded box-shadow h-100">
                     <div class="col-md-4 {% if room_id %}d-md-block d-none{% endif %} p-0 border-end custom-scrollbar" style="overflow-y: auto; height: 100%">
 
-                        <div id="searchbox" class="sticky-top"></div>
+                        <div id="searchbox" class="sticky-top" style="z-index: 100"></div>
                         <div id="hits" class="bg-light" style="height: calc(100% - 56px)"></div>
 
                         <div id="chat-room-container">
@@ -20,7 +20,7 @@
 
                     <div class="col-md-8 col-12 {% if not room_id %}d-md-flex d-none justify-content-center{% else %}d-flex{% endif %} flex-column p-0 h-100">
                         {% if room_id %}
-                            <div class="d-flex p-2 px-3 border-bottom align-items-center">
+                            <div class="d-flex p-2 px-3 border-bottom align-items-center justify-content-between">
                                 <div class="d-flex align-items-center">
                                     <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="me-2" style="width: 6%">
                                         <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="other_user_profile_image">
@@ -55,6 +55,7 @@
             </div>
 
         </div>
+
     </section>
 
     <script>
@@ -185,6 +186,7 @@
                         case "join": console.log("success"); setupObserveContainer(); break;
                         case "standard_message": appendChatMessage(data, true, true); break;
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
+                        case "delete_message": removeMessageElement(data.message_id); break;
                         case "error": handleError(data.code, data.message); break;
 
                         case "pagination_exhausted": paginationExhausted(); break;
@@ -204,7 +206,7 @@
             function loadMessages(messages) {
               messages = JSON.parse(messages)
               messages.forEach(function(message) {
-                appendChatMessage(message, false, true)
+                appendChatMessage(message, false, false)
               })
             }
 
@@ -218,12 +220,27 @@
                 } else {
                     messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
                 }
+
+                if (data.username === "{{ request.user.username }}") {
+                    messageElement.addEventListener('contextmenu', function (e) {
+                        e.preventDefault()
+                        let modal = createDeleteChatMessageModal(data)
+                        addModalToSection(modal)
+                        modal = $(`#${modal.id}`)
+                        modal.modal('show')
+                        modal.on("hidden.bs.modal", function (e) { modal.remove() });
+                    })
+                    messageElement.message = data;
+                }
+
+                if (scroll) { $(`#chat-messages-container`).animate({ scrollTop: 0 }, "slow"); }
             }
 
 
             function createMessageElement(data) {
                 let div = document.createElement('div')
                 div.classList.add('d-flex', 'col-8', 'mt-3')
+                div.id = `${data.id}_message`
 
                 "{{ request.user.username }}" === data.username ? div.classList.add('align-self-end', 'justify-content-end') : 1;
 
@@ -256,24 +273,18 @@
 
             async function moveChatRoomElement(data) {
                 let element = document.getElementById(chatRoomElementId(data.other_username))
+
                 if (!element) {
                   await fetchChatRoom(data.other_username)
                   .then(roomData => {
                     chatRoomsContainer.insertBefore(createChatRoomElement(roomData[0]), chatRoomsContainer.childNodes[0])
                     element = document.getElementById(chatRoomElementId(data.other_username))
+                    preLoadImage(`${roomData[0].other_user.image}`, `${roomData[0].other_user.username}_profile_image`)
                   })
                 }
 
-                const cloned = element.cloneNode(true)
-                element.id = `${chatRoomElementId(data.other_username)}_old`
-
-                let insertPosition = chatRoomsContainer.firstChild.tagName === "DIV" ? 0 : 1;
-                chatRoomsContainer.insertBefore(cloned, chatRoomsContainer.childNodes[insertPosition])
+                chatRoomsContainer.insertBefore(element, chatRoomsContainer.firstElementChild)
                 changeChatRoomUserAndText(data.other_username, data.username, data.message)
-
-                if (!element) { preLoadImage(`${data.other_user.image}`, `${data.other_user.username}_profile_image`) }
-
-                element.remove()
             }
 
             async function fetchChatRoom(username) {
@@ -289,6 +300,37 @@
                 chatRoomElementText.innerHTML = message
             }
 
+            function createDeleteChatMessageModal(message) {
+                let modal = document.createElement("div")
+                modal.classList.add("modal")
+                modal.tabIndex = -1
+                modal.id = "delete-message-modal"
+
+                modal.innerHTML += `
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="min-height: 200px">
+                            <div class="modal-body d-flex flex-column justify-content-center text-center">
+                                <div class="h2">Remove message</div>
+                                <div class="text-muted">Unsending a message will remove it for everyone.</div>
+                                <div class="fs-14px text-muted mt-3 w-75 mx-auto">
+                                    "${message.message}"
+                                </div>
+                            </div>
+                            <div class="modal-footer justify-content-around p-0">
+                                <div class="fs-6 text-danger border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-left-radius:7px" onclick="$('#${modal.id}').modal('hide'); deleteMessage(${message.id})">Remove</div>
+                                <div class="fs-6 border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-right-radius:7px" onclick="$('#${modal.id}').modal('hide')">Cancel</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+
+                return modal
+            }
+
+            function addModalToSection(modal) { document.getElementById("section").appendChild(modal) }
+            function removeModalFromSection(modal_id) { document.getElementById(modal_id)?.remove() }
+
+            function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
         {% endif %}
 
     </script>
@@ -310,6 +352,14 @@
                 chatSocket.send(JSON.stringify({
                     'command': 'load_messages',
                     'page_number': pageNumber,
+                    'room_id': roomId,
+                }))
+            }
+
+            function deleteMessage(message_id) {
+                chatSocket.send(JSON.stringify({
+                    'command': 'delete_message',
+                    'message_id': message_id,
                     'room_id': roomId,
                 }))
             }

@@ -35,13 +35,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             message = content.get('message')
             
             if message and self.room and room_id == str(self.room.id):
-                asyncio.create_task(self.save_chat_room_message(message=message))
+                created_message = await self.save_chat_room_message(message=message)
                 await self.channel_layer.group_send(self.group_name, {
                     'type': 'chat.message',
                     'message': message,
                     'username': self.scope['user'].username,
                     'other_username': self.room.other_user(self.scope['user']).username,
                     'timestamp': calculate_timestamp(timezone.now()),
+                    'id': str(created_message.id),
                 })
 
         elif command == "load_messages":
@@ -53,6 +54,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     await self.load_messages(messages, new_page_number)
                 else:
                     await self.pagination_exhausted()
+
+        elif command == "delete_message":
+            message_id = content.get('message_id')
+            if self.room and room_id == str(self.room.id) and message_id:
+                if deleted_msg_id := await self.delete_chat_room_message(message_id):
+                    await self.send_json({
+                        'msg_type': MsgType.DELETE_MESSAGE,
+                        "message_id": deleted_msg_id,
+                    })
 
         print("receiving json")
 
@@ -70,6 +80,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'username': event.get('username'),
             'other_username': event.get('other_username'),
             'timestamp': event.get('timestamp'),
+            'id': event.get('id'),
         })
 
     async def load_messages(self, messages, new_page_number):
@@ -167,6 +178,22 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             self.handle_error(e)
 
         return None, None
+
+    @database_sync_to_async
+    def delete_chat_room_message(self, message_id) -> Optional[str]:
+        """Method to delete chat room message."""
+
+        try:
+            msg = ChatRoomMessage.objects.get(id=message_id)
+        except ChatRoomMessage.DoesNotExist:
+            return None
+
+        if msg.user.username == self.scope['user'].username:
+            msg.delete()
+            return message_id
+
+        return None
+
 
 
 

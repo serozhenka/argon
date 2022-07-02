@@ -35,6 +35,14 @@ body {
     background-color: var(--light-gray-color);
 }
 
+.bg-gray-color-hover:hover {
+    transition: all .5s;
+}
+
+.bg-gray-color-hover:hover {
+    background-color: var(--light-gray-color);
+}
+
 .link-color {
     color: var(--link-color);
 }

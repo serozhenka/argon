@@ -13,4 +13,5 @@ class ChatRoomMessageSerializer(Serializer):
             'message': obj.body.text,
             'username': obj.user.username,
             'timestamp': calculate_timestamp(obj.timestamp),
+            'id': str(obj.id),
         }
