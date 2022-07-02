@@ -5,35 +5,41 @@
 
     <section class="my-4">
         <div class="row mx-0">
-            <div class="col-lg-9 col-md-8 col-sm-9 col-11 mx-auto" style="min-height: 600px; max-height: 600px">
+            <div class="col-lg-9 {% if room_id %}col-11{% else %}col-10{% endif %} mx-auto" style="min-height: 600px; max-height: 600px">
                 <div class="row bg-light rounded box-shadow h-100">
-                    <div class="col-lg-4 p-0 border-end custom-scrollbar" id="chat-room-container" style="overflow-y: auto; height: 100%">
+                    <div class="col-md-4 {% if room_id %}d-md-block d-none{% endif %} p-0 border-end custom-scrollbar" id="chat-room-container" style="overflow-y: auto; height: 100%">
 
                         <div id="observe-container" class="d-block py-3"></div>
                     </div>
 
-                    <div class="col-lg-8 col-12 d-flex flex-column p-0 h-100">
+                    <div class="col-md-8 col-12 {% if not room_id %}d-md-flex d-none justify-content-center{% endif %} flex-column p-0 h-100">
                         {% if room_id %}
                             <div class="d-flex p-3 border-bottom align-items-center">
-                                <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="me-2" style="width: 6%">
-                                    <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="other_user_profile_image">
-                                </a>
-                                <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="fw-bold link text-dark">{{ other_user.username }}</a>
+                                <div class="d-flex align-items-center">
+                                    <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="me-2" style="width: 6%">
+                                        <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="other_user_profile_image">
+                                    </a>
+                                    <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="fw-bold link text-dark">{{ other_user.username }}</a>
+                                </div>
+
+                                <div class="{% if room_id %}d-md-none d-block{% endif %}">
+                                    <a href="{% url 'chat:chat-general-page' %}" class="link me-1">Back</a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
+                                <div id="message-observe-container" class="d-block py-3"></div>
+                            </div>
+
+                        {% else %}
+                            <div class="text-center">
+                                <div class="display-6 fst-italic">Argon Messaging</div>
+                                <div class="fs-14px mt-2 text-muted">Select a chat to start messaging.</div>
                             </div>
                         {% endif %}
-                        <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
-
-{#                            <div class="d-flex col-8 align-self-end justify-content-end">#}
-{#                                <div class="py-2 px-3 rounded mt-3 bg-light-blue">#}
-{#                                    <div class="message-box">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ad eum minus nam officiis perferendis quidem quis quod, rem rerum tenetur totam velit voluptatem! Culpa cupiditate natus necessitatibus nihil nisi! Dolorem.</div>#}
-{#                                    <div class="text-end fs-12px text-muted mt-1">18:27, May 12</div>#}
-{#                                </div>#}
-{#                            </div>#}
-                            {% if room_id %}
-                                <div id="message-observe-container" class="d-block py-3"></div>
-                            {% endif %}
-
-                        </div>
+{#                        <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">#}
+{#                            <div id="message-observe-container" class="d-block py-3"></div>#}
+{#                        </div>#}
                         {% if room_id %}
                             <div class="input-group p-3">
                                 <textarea class="form-control custom-scroll disable-focus m-0 p-2 bg-light text-muted fs-14px rounded-start" id="message-textarea" maxlength="800" rows="1" placeholder="Message..." style="overflow-y:scroll; overflow-x: hidden; border-radius: 0;"></textarea>
@@ -53,6 +59,7 @@
             preLoadImage("{{ other_user.image.url }}", "other_user_profile_image")
             const messageButton = document.getElementById("message-button")
             const messageField = document.getElementById("message-textarea")
+            const chatMessagesContainer = document.getElementById('chat-messages-container')
 
             messageButton.addEventListener('click', function(e) {
                 if (messageField.value.trim()) {
@@ -77,7 +84,6 @@
         const chatRoomsContainer = document.getElementById("chat-room-container")
         let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
         const roomsObserveContainer = document.getElementById("observe-container")
-        const chatMessagesContainer = document.getElementById('chat-messages-container')
 
 
         function createIntersectionObserver(callback) {
