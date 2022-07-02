@@ -82,6 +82,7 @@ class ChatRoomsApiView(generics.ListAPIView):
     def get_queryset(self):
         chat_rooms = ChatRoom.objects.filter(
             Q(user1=self.request.user) |
-            Q(user2=self.request.user)
+            Q(user2=self.request.user),
+            last_message__isnull=False,
         ).order_by('-last_message__timestamp').order_by(F('last_message').desc(nulls_last=True))
         return chat_rooms

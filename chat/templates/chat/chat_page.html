@@ -3,18 +3,24 @@
 
 {% block content %}
 
+
     <section class="my-4">
         <div class="row mx-0">
             <div class="col-lg-9 {% if room_id %}col-11{% else %}col-10{% endif %} mx-auto" style="min-height: 600px; max-height: 600px">
                 <div class="row bg-light rounded box-shadow h-100">
-                    <div class="col-md-4 {% if room_id %}d-md-block d-none{% endif %} p-0 border-end custom-scrollbar" id="chat-room-container" style="overflow-y: auto; height: 100%">
+                    <div class="col-md-4 {% if room_id %}d-md-block d-none{% endif %} p-0 border-end custom-scrollbar" style="overflow-y: auto; height: 100%">
 
-                        <div id="observe-container" class="d-block py-3"></div>
+                        <div id="searchbox" class="sticky-top"></div>
+                        <div id="hits" class="bg-light" style="height: calc(100% - 56px)"></div>
+
+                        <div id="chat-room-container">
+                            <div id="observe-container" class="d-block py-3"></div>
+                        </div>
                     </div>
 
-                    <div class="col-md-8 col-12 {% if not room_id %}d-md-flex d-none justify-content-center{% endif %} flex-column p-0 h-100">
+                    <div class="col-md-8 col-12 {% if not room_id %}d-md-flex d-none justify-content-center{% else %}d-flex{% endif %} flex-column p-0 h-100">
                         {% if room_id %}
-                            <div class="d-flex p-3 border-bottom align-items-center">
+                            <div class="d-flex p-2 px-3 border-bottom align-items-center">
                                 <div class="d-flex align-items-center">
                                     <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="me-2" style="width: 6%">
                                         <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="other_user_profile_image">
@@ -22,13 +28,13 @@
                                     <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="fw-bold link text-dark">{{ other_user.username }}</a>
                                 </div>
 
-                                <div class="{% if room_id %}d-md-none d-block{% endif %}">
+                                <div>
                                     <a href="{% url 'chat:chat-general-page' %}" class="link me-1">Back</a>
                                 </div>
                             </div>
 
                             <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">
-                                <div id="message-observe-container" class="d-block py-3"></div>
+                                <div id="message-observe-container" class="d-block py-3 h-100"></div>
                             </div>
 
                         {% else %}
@@ -37,9 +43,7 @@
                                 <div class="fs-14px mt-2 text-muted">Select a chat to start messaging.</div>
                             </div>
                         {% endif %}
-{#                        <div class="d-flex flex-column-reverse flex-grow-1 p-3 custom-scrollbar fs-14px" id="chat-messages-container" style="overflow-y: auto; height: 100%">#}
-{#                            <div id="message-observe-container" class="d-block py-3"></div>#}
-{#                        </div>#}
+
                         {% if room_id %}
                             <div class="input-group p-3">
                                 <textarea class="form-control custom-scroll disable-focus m-0 p-2 bg-light text-muted fs-14px rounded-start" id="message-textarea" maxlength="800" rows="1" placeholder="Message..." style="overflow-y:scroll; overflow-x: hidden; border-radius: 0;"></textarea>
@@ -82,8 +86,9 @@
 
         const limit = 10
         const chatRoomsContainer = document.getElementById("chat-room-container")
-        let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
         const roomsObserveContainer = document.getElementById("observe-container")
+        let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
+        let hitsContainer = document.getElementById("hits")
 
 
         function createIntersectionObserver(callback) {
@@ -120,6 +125,7 @@
         function appendChatRoom(data) {
               data.forEach(function(room, i) {
                 let element = document.createElement('a')
+                element.id = chatRoomElementId(room.other_user.username)
                 element.classList.add('d-flex', 'align-items-center', 'p-3', 'hover-block', 'text-decoration-none', 'text-dark')
                 element.href = "{% url 'chat:chat-page' username=123456789 %}".replace(123456789, room.other_user.username)
                 element.innerHTML = `
@@ -132,8 +138,10 @@
                         </div>
                         <div class="fs-14px text-overflow">
                             ${room.last_message ?
-                            `<span class="semi-gray-color"">${room.last_message.user.username}:</span>
-                            <span>${room.last_message.body.text}</span>` : " "
+                            `<span class="text-primary" id="${chatRoomElementUserId(room.other_user.username)}">
+                                ${room.last_message.user.username === "{{ request.user.username }}" ? "you" : room.last_message.user.username }:
+                            </span>
+                            <span id="${chatRoomElementTextId(room.other_user.username)}">${room.last_message.body.text}</span>` : " "
                             }
                         </div>
                     </div>
@@ -169,7 +177,7 @@
                     switch (data.msg_type) {
                         case "join": console.log("success"); setupObserveContainer(); break;
                         case "standard_message": appendChatMessage(data, true, true); break;
-                        case "load_messages": pageNumber = data.new_page_number; console.log(data); loadMessages(data.messages); break;
+                        case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
                         case "error": handleError(data.code, data.message); break;
 
                         case "pagination_exhausted": paginationExhausted(); break;
@@ -188,7 +196,6 @@
 
             function loadMessages(messages) {
               messages = JSON.parse(messages)
-              console.log(messages)
               messages.forEach(function(message) {
                 appendChatMessage(message, false, true)
               })
@@ -198,10 +205,11 @@
                 let messageElement = createMessageElement(data)
 
                 if (isNew) {
-                  let insertPosition = chatMessagesContainer.firstChild.tagName === "DIV" ? 0 : 1;
-                  chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.childNodes[insertPosition])
+                    let insertPosition = chatMessagesContainer.firstChild.tagName === "DIV" ? 0 : 1;
+                    chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.childNodes[insertPosition])
+                    moveChatRoomElement(data)
                 } else {
-                  messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
+                    messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
                 }
             }
 
@@ -229,7 +237,7 @@
 
             function messagesCallback(entries) {
                 for (const entry of entries) {
-                    if (entry.isIntersecting) { console.log("called"); getNextMessagesPage(pageNumber) }
+                    if (entry.isIntersecting) { getNextMessagesPage(pageNumber) }
                 }
             }
 
@@ -237,6 +245,26 @@
                 pageNumber = -1
                 messagesObserver.unobserve(messagesObserveContainer)
                 messagesObserveContainer.remove()
+            }
+
+            function moveChatRoomElement(data) {
+                let element = document.getElementById(chatRoomElementId(data.other_username))
+                const cloned = element.cloneNode(true)
+                element.id = `${chatRoomElementId(data.other_username)}_old`
+
+                let insertPosition = chatRoomsContainer.firstChild.tagName === "DIV" ? 0 : 1;
+                chatRoomsContainer.insertBefore(cloned, chatRoomsContainer.childNodes[insertPosition])
+                changeChatRoomUserAndText(data.other_username, data.username, data.message)
+
+                element.remove()
+            }
+
+            function changeChatRoomUserAndText(other_username, username, message) {
+                let chatRoomElementUser = document.getElementById(chatRoomElementUserId(other_username))
+                let chatRoomElementText = document.getElementById(chatRoomElementTextId(other_username))
+
+                chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":"
+                chatRoomElementText.innerHTML = message
             }
 
         {% endif %}
@@ -266,4 +294,19 @@
 
         </script>
     {% endif %}
+
+    {#  ids generators  #}
+    <script>
+
+        const chatRoomElementId = (username) => `${username}_chat_room_element`
+        const chatRoomElementUserId = (username) => `${username}_chat_room_user_element`
+        const chatRoomElementTextId = (username) => `${username}_chat_room_text_element`
+
+    </script>
+
+    {# search scripts #}
+    <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.5.1/dist/algoliasearch-lite.umd.js" integrity="sha256-EXPXz4W6pQgfYY3yTpnDa3OH8/EPn16ciVsPQ/ypsjk=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.8.3/dist/instantsearch.production.min.js" integrity="sha256-LAGhRRdtVoD6RLo2qDQsU2mp+XVSciKRC8XPOBWmofM=" crossorigin="anonymous"></script>
+    {% include 'scripts/search-script.html' %}
+
 {% endblock content %}

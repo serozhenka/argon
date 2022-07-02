@@ -18,7 +18,13 @@ def chat_page(request, username=None):
 
             room = ChatRoom.objects.get_create(user1=request.user, user2=user)
             other_user = room.other_user(request.user)
-            context['room_id'] = room.id
-            context['other_user'] = other_user
-            context['debug'] = settings.DEBUG
+
+            context.update({
+                'room_id': room.id,
+                'other_user': other_user,
+                'debug': settings.DEBUG,
+            })
+
+        context['page'] = "chat"
+
         return render(request, 'chat/chat_page.html', context=context)

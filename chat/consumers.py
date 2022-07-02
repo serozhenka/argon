@@ -40,6 +40,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     'type': 'chat.message',
                     'message': message,
                     'username': self.scope['user'].username,
+                    'other_username': self.room.other_user(self.scope['user']).username,
                     'timestamp': calculate_timestamp(timezone.now()),
                 })
 
@@ -67,6 +68,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'msg_type': MsgType.STANDARD_MESSAGE,
             'message': event.get('message'),
             'username': event.get('username'),
+            'other_username': event.get('other_username'),
             'timestamp': event.get('timestamp'),
         })
 

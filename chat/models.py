@@ -13,7 +13,7 @@ class ChatRoomManager(models.Manager):
             (Q(user1=user1) & Q(user2=user2)) |
             (Q(user1=user2) & Q(user2=user1))
         )
-        if not room.exists:
+        if not room.exists():
             return self.model.objects.create(user1=user1, user2=user2)
         return room.first()
 
