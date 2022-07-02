@@ -14,5 +14,6 @@ urlpatterns = [
     path('posts/<str:post_id>/comments/', views.PostCommentsApiView.as_view(), name='api-post-comments-list'),
 
     path('chat/rooms/', views.ChatRoomsApiView.as_view(), name='api-chat-rooms-list'),
+    path('chat/roomes/<str:username>/', views.ChatRoomApiView.as_view(), name='api-chat-room'),
 ]
 

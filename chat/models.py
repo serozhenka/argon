@@ -21,7 +21,7 @@ class ChatRoomManager(models.Manager):
 class ChatRoom(models.Model):
     user1 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user1')
     user2 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user2')
-    last_message = models.OneToOneField('ChatRoomMessage', on_delete=models.SET_NULL, null=True, blank=True)
+    last_message = models.OneToOneField('ChatRoomMessage', on_delete=models.DO_NOTHING, null=True, blank=True)
 
     objects = ChatRoomManager()
 

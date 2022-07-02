@@ -86,3 +86,20 @@ class ChatRoomsApiView(generics.ListAPIView):
             last_message__isnull=False,
         ).order_by('-last_message__timestamp').order_by(F('last_message').desc(nulls_last=True))
         return chat_rooms
+
+
+class ChatRoomApiView(generics.ListAPIView):
+    serializer_class = ChatRoomSerializer
+
+    def get_queryset(self):
+        try:
+            user = Account.objects.get(username=self.kwargs.get('username'))
+        except Account.DoesNotExist:
+            raise Http404
+
+        chat_room = ChatRoom.objects.filter(
+            (Q(user1=self.request.user) & Q(user2=user)) |
+            (Q(user2=self.request.user) & Q(user1=user))
+        )
+
+        return chat_room
