@@ -166,6 +166,7 @@
             let pageNumber = 1
             let firstUnreadMessage = null
             let firstUnreadMessageFound = false
+            let unreadMessagesArray = []
 
             let roomId = "{{ room_id }}"
             let ws_scheme = window.location.protocol === "http:" ? "ws:" : "wss:"
@@ -185,7 +186,7 @@
                 chatSocket.onmessage = function(e) {
                     let data = JSON.parse(e.data)
                     switch (data.msg_type) {
-                        case "join": setFirstUnreadMsg(JSON.parse(data.first_unread_message)[0]); setupObserveContainer(); break;
+                        case "join": setFirstUnreadMsg(JSON.parse(data.first_unread_message)); setupObserveContainer(); break;
                         case "standard_message": appendChatMessage(data, true, true); break;
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
                         case "delete_message": removeMessageElement(data.message_id); break;
@@ -208,19 +209,11 @@
             function loadMessages(messages) {
                 messages = JSON.parse(messages)
                 messages.forEach(function(message) {
-                    appendChatMessage(message, false, false)
+                  if (!firstUnreadMessageFound && !message.is_read) { unreadMessagesArray.push(message) }
+                  appendChatMessage(message, false, false)
                 })
 
-                if (!firstUnreadMessageFound) {
-                    let msgContainer = $(`#chat-messages-container`)
-                    let scrollHeight = 0
-                    let firstUnreadMessageElement = $(`#${firstUnreadMessage.id}_message`)
-
-                    if (firstUnreadMessageElement.length) { scrollHeight = -(msgContainer.prop("scrollHeight") + firstUnreadMessageElement.offset().top) - 100 }
-                    else { scrollHeight = -msgContainer.prop("scrollHeight") }
-
-                    msgContainer.animate({ scrollTop: scrollHeight }, "slow")
-              }
+                if (!firstUnreadMessageFound) { scrollIntoFirstUnreadMessage(`${firstUnreadMessage.id}`) }
             }
 
             function appendChatMessage(data, isNew, scroll) {
@@ -233,6 +226,7 @@
                 } else {
                     messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
                 }
+
 
                 if (data.username === "{{ request.user.username }}") {
                     messageElement.addEventListener('contextmenu', function (e) {
@@ -278,6 +272,13 @@
             function messagesCallback(entries) {
                 for (const entry of entries) {
                     if (entry.isIntersecting) { getNextMessagesPage(pageNumber) }
+                }
+            }
+
+            let messagesReadObserver = createIntersectionObserver(messagesReadObserverCallback)
+            function messagesReadObserverCallback(entries) {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) { console.log("called") }
                 }
             }
 
@@ -345,11 +346,38 @@
 
             function addModalToSection(modal) { document.getElementById("section").appendChild(modal) }
             function removeModalFromSection(modal_id) { document.getElementById(modal_id)?.remove() }
-
             function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
+
             function setFirstUnreadMsg(message) {
-                if (message.username !== "{{ request.user.username }}") { firstUnreadMessage = message }
-                else ( firstUnreadMessageFound = true )
+                if (message) {
+                    message = message[0]
+                    if (message.username !== "{{ request.user.username }}") { firstUnreadMessage = message }
+                    else ( firstUnreadMessageFound = true )
+                } else { firstUnreadMessageFound = true }
+            }
+
+            async function scrollIntoFirstUnreadMessage(unreadMsgId) {
+                let msgContainer = $(`#chat-messages-container`)
+                let scrollHeight = 0
+                let firstUnreadMessageElement = $(`#${unreadMsgId}_message`)
+
+                if (firstUnreadMessageElement.length) {
+                    scrollHeight = -(msgContainer.prop("scrollHeight") + firstUnreadMessageElement.offset().top + 500);
+                    firstUnreadMessageFound = true
+                }
+                else { scrollHeight = -msgContainer.prop("scrollHeight") }
+
+                await msgContainer.animate({ scrollTop: scrollHeight }, "slow").promise()
+                if (firstUnreadMessageFound) { observeUnreadMessageElements() }
+            }
+
+            function observeUnreadMessageElements() {
+                unreadMessagesArray.forEach(function(message) {
+                    if (message.username !== "{{ request.user.username }}") {
+                        let messageElement = document.getElementById(`${message.id}_message`)
+                        if (messageElement) { messagesReadObserver.observe(messageElement) }
+                    }
+                })
             }
         {% endif %}
 

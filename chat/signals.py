@@ -17,14 +17,12 @@ def set_chat_room_last_message(sender: ChatRoomMessage, instance: ChatRoomMessag
 def set_chat_room_last_message_if_last_message_deleted(sender: ChatRoomMessage, instance: ChatRoomMessage, **kwargs):
     if instance.room.last_message == instance:
         room_messages = sender.objects.filter(room=instance.room).order_by('-timestamp')
-        instance.room.last_message = room_messages[1] if room_messages.count() > 2 else None
+        instance.room.last_message = room_messages[1] if room_messages.count() > 1 else None
         instance.room.save()
 
     if instance.room.first_unread_message == instance:
-        instance.room.first_unread_message = ChatRoomMessage.objects.filter(
-            room_id=instance.room_id,
-            is_read=False
-        ).order_by('timestamp').first()
+        unread_messages = ChatRoomMessage.objects.filter(room_id=instance.room_id, is_read=False).order_by('timestamp')
+        instance.room.first_unread_message = unread_messages[1] if unread_messages.count() > 1 else None
 
     instance.room.save()
 
