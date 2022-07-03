@@ -3,6 +3,8 @@ from django.db.models import Q
 from django.conf import settings
 from typing import Optional
 
+from users.models import Account
+
 def get_message_body_image_path(instance: 'ChatRoomMessageBody', filename: str) -> str:
     return f'chat_message_images/{str(instance.pk)}_{filename}'
 
@@ -19,9 +21,14 @@ class ChatRoomManager(models.Manager):
 
 
 class ChatRoom(models.Model):
-    user1 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user1')
-    user2 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user2')
-    last_message = models.OneToOneField('ChatRoomMessage', on_delete=models.DO_NOTHING, null=True, blank=True)
+    user1: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user1')
+    user2: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user2')
+    last_message = models.OneToOneField(
+        'ChatRoomMessage', on_delete=models.DO_NOTHING,
+        null=True, blank=True, related_name='last_message')
+    first_unread_message = models.OneToOneField(
+        'ChatRoomMessage', on_delete=models.DO_NOTHING,
+        null=True, blank=True, related_name='first_unread_message')
 
     objects = ChatRoomManager()
 
@@ -44,6 +51,9 @@ class ChatRoomMessage(models.Model):
     body = models.OneToOneField('ChatRoomMessageBody', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.id)
 
 
 class ChatRoomMessageBody(models.Model):

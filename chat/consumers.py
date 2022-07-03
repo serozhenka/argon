@@ -42,6 +42,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     'username': self.scope['user'].username,
                     'other_username': self.room.other_user(self.scope['user']).username,
                     'timestamp': calculate_timestamp(timezone.now()),
+                    'is_read': False,
                     'id': str(created_message.id),
                 })
 
@@ -80,6 +81,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'username': event.get('username'),
             'other_username': event.get('other_username'),
             'timestamp': event.get('timestamp'),
+            'is_read': event.get('is_read'),
             'id': event.get('id'),
         })
 
@@ -102,11 +104,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """Called when client send a text frame with join command."""
 
         try:
-            room = await self.get_chat_room_or_error(room_id)
+            room: ChatRoom = await self.get_chat_room_or_error(room_id)
             self.room = room
             self.group_name = room.group_name
+            first_unread_message = await self.get_serialized_first_unread_message(self.room)
+
             await self.channel_layer.group_add(room.group_name, self.channel_name)
-            await self.send_json({'msg_type': MsgType.JOIN, 'room_id': room.id})
+            await self.send_json({
+                'msg_type': MsgType.JOIN,
+                'room_id': room.id,
+                'first_unread_message': first_unread_message,
+            })
 
         except ClientError as e:
             await self.handle_error(e)
@@ -145,11 +153,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return room
 
     @database_sync_to_async
-    def save_chat_room_message(self, message) -> None:
+    def save_chat_room_message(self, message) -> ChatRoomMessage:
         """Method creating chat room message along with chat room message body."""
 
         body = ChatRoomMessageBody.objects.create(text=message)
-        ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
+        return ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
 
     @database_sync_to_async
     def get_chat_room_messages(self, page_number: Union[str, int]) -> Tuple[Optional[List], Optional[int]]:
@@ -194,6 +202,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         return None
 
+    @database_sync_to_async
+    def get_serialized_first_unread_message(self, room: ChatRoom):
+        if room.first_unread_message:
+            serializer = ChatRoomMessageSerializer()
+            return serializer.serialize([room.first_unread_message])
+        return None
 
 
 

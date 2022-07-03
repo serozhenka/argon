@@ -4,7 +4,7 @@ from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 
 
 class ChatRoomAdmin(admin.ModelAdmin):
-    list_display = ('user1', 'user2')
+    list_display = ('user1', 'user2', 'last_message', 'first_unread_message')
     search_fields = ('user1__email', 'user1__username', 'user2__email', 'user2__username')
 
 
