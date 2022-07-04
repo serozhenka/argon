@@ -14,7 +14,8 @@ from .utils import calculate_timestamp, ChatRoomMessageSerializer
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
-        self.room, self.group_name = None, None
+        self.room: Optional[ChatRoom] = None
+        self.group_name = None
         super().__init__(*args, **kwargs)
 
     async def connect(self):
@@ -35,7 +36,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             message = content.get('message')
             
             if message and self.room and room_id == str(self.room.id):
-                created_message = await self.save_chat_room_message(message=message)
+                created_message = await self.save_chat_room_message(text=message)
                 await self.channel_layer.group_send(self.group_name, {
                     'type': 'chat.message',
                     'message': message,
@@ -65,11 +66,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                         "message_id": deleted_msg_id,
                     })
 
-        print("receiving json")
+        elif command == "set_message_read":
+            message_id = content.get('message_id')
+            if self.room and room_id == str(self.room.id) and message_id:
+                if marked_message_id := await self.set_message_as_read(message_id):
+                    await self.channel_layer.group_send(self.group_name, {
+                        'type': 'send.message.read',
+                        "message_id": marked_message_id,
+                    })
 
     async def disconnect(self, code: int):
         """Called when client disconnects or connection is lost."""
-        await self.leave_room(self.room.id) if self.room else None
+        await self.leave_room(str(self.room.id)) if self.room else None
         await self.close(code)
 
     async def chat_message(self, event):
@@ -83,6 +91,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'timestamp': event.get('timestamp'),
             'is_read': event.get('is_read'),
             'id': event.get('id'),
+        })
+
+    async def send_message_read(self, event):
+        """Method to send read message id to the client."""
+        await self.send_json({
+            'msg_type': MsgType.SET_MESSAGE_READ,
+            "message_id": event.get('message_id'),
         })
 
     async def load_messages(self, messages, new_page_number):
@@ -105,9 +120,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         try:
             room: ChatRoom = await self.get_chat_room_or_error(room_id)
-            self.room = room
+            self.room: ChatRoom = room
             self.group_name = room.group_name
-            first_unread_message = await self.get_serialized_first_unread_message(self.room)
+            first_unread_message = await self.get_first_unread_message(self.room)
 
             await self.channel_layer.group_add(room.group_name, self.channel_name)
             await self.send_json({
@@ -153,11 +168,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return room
 
     @database_sync_to_async
-    def save_chat_room_message(self, message) -> ChatRoomMessage:
+    def save_chat_room_message(self, text) -> ChatRoomMessage:
         """Method creating chat room message along with chat room message body."""
 
-        body = ChatRoomMessageBody.objects.create(text=message)
-        return ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
+        body = ChatRoomMessageBody.objects.create(text=text)
+        message = ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
+
+        return message
 
     @database_sync_to_async
     def get_chat_room_messages(self, page_number: Union[str, int]) -> Tuple[Optional[List], Optional[int]]:
@@ -203,10 +220,36 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return None
 
     @database_sync_to_async
-    def get_serialized_first_unread_message(self, room: ChatRoom):
-        if room.first_unread_message:
+    def get_first_unread_message(self, room: ChatRoom):
+        """
+        Method to get first unread message, serialize it if exists and return it.
+        If message does not exist return None
+        """
+
+        unread_messages = room.chatroommessage_set.filter(is_read=False).order_by('timestamp')
+        if unread_messages.exists():
             serializer = ChatRoomMessageSerializer()
-            return serializer.serialize([room.first_unread_message])
+            return serializer.serialize([unread_messages.first()])
+        return None
+
+    @database_sync_to_async
+    def set_message_as_read(self, message_id) -> Optional[str]:
+        """
+        Method to set message as read if user requesting method
+        is not current user (user can not mark itself messages as read).
+        If message by given message_id does not exist returns None.
+        """
+
+        try:
+            message = ChatRoomMessage.objects.get(id=message_id)
+        except ChatRoomMessage.DoesNotExist:
+            return None
+
+        if message.user.username != self.scope['user'].username:
+            message.is_read = True
+            message.save()
+            return message_id
+
         return None
 
 

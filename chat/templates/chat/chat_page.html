@@ -13,8 +13,8 @@
                         <div id="searchbox" class="sticky-top" style="z-index: 100"></div>
                         <div id="hits" class="bg-light" style="height: calc(100% - 56px)"></div>
 
-                        <div id="chat-room-container">
-                            <div id="observe-container" class="d-block py-3"></div>
+                        <div id="chat-room-container" style="height: calc(100% - 56px)">
+                            <div id="observe-container" class="d-block py-3 h-100"></div>
                         </div>
                     </div>
 
@@ -190,6 +190,7 @@
                         case "standard_message": appendChatMessage(data, true, true); break;
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
                         case "delete_message": removeMessageElement(data.message_id); break;
+                        case "set_message_read": markMessageAsRead(data.message_id); break;
                         case "error": handleError(data.code, data.message); break;
 
                         case "pagination_exhausted": paginationExhausted(); break;
@@ -220,9 +221,9 @@
                 let messageElement = createMessageElement(data)
 
                 if (isNew) {
-                    let insertPosition = chatMessagesContainer.firstChild.tagName === "DIV" ? 0 : 1;
-                    chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.childNodes[insertPosition])
+                    chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.firstElementChild)
                     moveChatRoomElement(data)
+                    if (data.username !== "{{ request.user.username }}") { console.log("observed");messagesReadObserver.observe(messageElement) }
                 } else {
                     messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
                 }
@@ -248,6 +249,7 @@
                 let div = document.createElement('div')
                 div.classList.add('d-flex', 'col-8', 'mt-3')
                 div.id = `${data.id}_message`
+                div.setAttribute('message_id', `${data.id}`)
 
                 "{{ request.user.username }}" === data.username ? div.classList.add('align-self-end', 'justify-content-end') : 1;
 
@@ -256,7 +258,7 @@
                         <div class="message-box">${data.message}</div>
                         <div class="d-flex justify-content-end align-items-center fs-12px">
                             <div class="text-end text-muted mt-1">${data.timestamp}</div>
-                            <div class="align-self-end ms-2"><i class="fa-light fa-check"></i>${data.is_read ? `<i class="fa-light fa-check" style="margin-left: -6px"></i>` : ""}</div>
+                            <div class="align-self-end ms-2 read-icons"><i class="fa-light fa-check"></i>${data.is_read ? `<i class="fa-light fa-check" style="margin-left: -6px"></i>` : ""}</div>
                         </div>
                     </div>
                 `
@@ -278,7 +280,11 @@
             let messagesReadObserver = createIntersectionObserver(messagesReadObserverCallback)
             function messagesReadObserverCallback(entries) {
                 for (const entry of entries) {
-                    if (entry.isIntersecting) { console.log("called") }
+                    if (entry.isIntersecting) {
+                        let message_id = entry.target.getAttribute('message_id')
+                        console.log("intersecting", message_id)
+                        if (message_id) { unobserveMessageElements(message_id); sendMessageReadFrame(message_id); }
+                    }
                 }
             }
 
@@ -289,19 +295,20 @@
             }
 
             async function moveChatRoomElement(data) {
-                let element = document.getElementById(chatRoomElementId(data.other_username))
+                let other_username = data.other_username === "{{ request.user.username }}" ? data.username : data.other_username;
+                let element = document.getElementById(chatRoomElementId(other_username))
 
                 if (!element) {
-                  await fetchChatRoom(data.other_username)
+                  await fetchChatRoom(other_username)
                   .then(roomData => {
                     chatRoomsContainer.insertBefore(createChatRoomElement(roomData[0]), chatRoomsContainer.childNodes[0])
-                    element = document.getElementById(chatRoomElementId(data.other_username))
+                    element = document.getElementById(chatRoomElementId(other_username))
                     preLoadImage(`${roomData[0].other_user.image}`, `${roomData[0].other_user.username}_profile_image`)
                   })
                 }
 
                 chatRoomsContainer.insertBefore(element, chatRoomsContainer.firstElementChild)
-                changeChatRoomUserAndText(data.other_username, data.username, data.message)
+                changeChatRoomUserAndText(other_username, data.username, data.message)
             }
 
             async function fetchChatRoom(username) {
@@ -349,6 +356,7 @@
             function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
 
             function setFirstUnreadMsg(message) {
+                console.log(message)
                 if (message) {
                     message = message[0]
                     if (message.username !== "{{ request.user.username }}") { firstUnreadMessage = message }
@@ -362,7 +370,7 @@
                 let firstUnreadMessageElement = $(`#${unreadMsgId}_message`)
 
                 if (firstUnreadMessageElement.length) {
-                    scrollHeight = -(msgContainer.prop("scrollHeight") + firstUnreadMessageElement.offset().top + 500);
+                    scrollHeight = msgContainer.scrollTop() + firstUnreadMessageElement.position().top - 525;
                     firstUnreadMessageFound = true
                 }
                 else { scrollHeight = -msgContainer.prop("scrollHeight") }
@@ -379,6 +387,22 @@
                     }
                 })
             }
+
+            function unobserveMessageElements(message_id) {
+                let messageElement = document.getElementById(`${message_id}_message`)
+                if (messageElement) { messagesReadObserver.unobserve(messageElement) }
+            }
+
+            function markMessageAsRead(message_id) {
+                let messageElement = $(`#${message_id}_message`)
+                if (messageElement.length) {
+                    let icons = messageElement.find('.read-icons')
+                    if (icons.length) {
+                      icons.append(`<i class="fa-light fa-check" style="margin-left: -6px"></i>`)
+                    }
+                }
+            }
+
         {% endif %}
 
     </script>
@@ -407,6 +431,14 @@
             function deleteMessage(message_id) {
                 chatSocket.send(JSON.stringify({
                     'command': 'delete_message',
+                    'message_id': message_id,
+                    'room_id': roomId,
+                }))
+            }
+
+            function sendMessageReadFrame(message_id) {
+                chatSocket.send(JSON.stringify({
+                    'command': 'set_message_read',
                     'message_id': message_id,
                     'room_id': roomId,
                 }))

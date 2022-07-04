@@ -4,13 +4,13 @@ from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 
 
 class ChatRoomAdmin(admin.ModelAdmin):
-    list_display = ('user1', 'user2', 'last_message', 'first_unread_message')
+    list_display = ('user1', 'user2', 'last_message')
     search_fields = ('user1__email', 'user1__username', 'user2__email', 'user2__username')
 
 
 class ChatRoomMessageAdmin(admin.ModelAdmin):
     list_display = ('user', 'room', 'body', 'timestamp', 'is_read')
-    search_fields = ('user__email', 'user__username')
+    search_fields = ('user__email', 'user__username', 'body__id')
 
 
 class ChatRoomMessageBodyAdmin(admin.ModelAdmin):

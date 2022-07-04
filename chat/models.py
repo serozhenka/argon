@@ -23,12 +23,9 @@ class ChatRoomManager(models.Manager):
 class ChatRoom(models.Model):
     user1: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user1')
     user2: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user2')
-    last_message = models.OneToOneField(
+    last_message = models.ForeignKey(
         'ChatRoomMessage', on_delete=models.DO_NOTHING,
         null=True, blank=True, related_name='last_message')
-    first_unread_message = models.OneToOneField(
-        'ChatRoomMessage', on_delete=models.DO_NOTHING,
-        null=True, blank=True, related_name='first_unread_message')
 
     objects = ChatRoomManager()
 
@@ -50,7 +47,7 @@ class ChatRoomMessage(models.Model):
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
     body = models.OneToOneField('ChatRoomMessageBody', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return str(self.id)

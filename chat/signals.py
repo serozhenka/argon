@@ -1,17 +1,7 @@
-from django.db.models.signals import post_save, pre_delete, post_delete
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
 from .models import ChatRoomMessage, ChatRoom
-
-@receiver(post_save, sender=ChatRoomMessage)
-def set_chat_room_last_message(sender: ChatRoomMessage, instance: ChatRoomMessage, created, **kwargs):
-    if created:
-        instance.room.last_message = instance
-
-    if not instance.room.first_unread_message:
-        instance.room.first_unread_message = instance
-
-    instance.room.save()
 
 @receiver(pre_delete, sender=ChatRoomMessage)
 def set_chat_room_last_message_if_last_message_deleted(sender: ChatRoomMessage, instance: ChatRoomMessage, **kwargs):
@@ -20,16 +10,19 @@ def set_chat_room_last_message_if_last_message_deleted(sender: ChatRoomMessage, 
         instance.room.last_message = room_messages[1] if room_messages.count() > 1 else None
         instance.room.save()
 
-    if instance.room.first_unread_message == instance:
-        unread_messages = ChatRoomMessage.objects.filter(room_id=instance.room_id, is_read=False).order_by('timestamp')
-        instance.room.first_unread_message = unread_messages[1] if unread_messages.count() > 1 else None
+@receiver(post_save, sender=ChatRoomMessage)
+def set_first_unread_message_if_created(sender, instance: ChatRoomMessage, created, **kwargs):
+    if created:
+        instance.room.last_message = instance
+        instance.room.save()
 
-    instance.room.save()
 
 @receiver(post_delete, sender=ChatRoomMessage)
 def delete_chat_room_message_body(sender: ChatRoomMessage, instance, **kwargs):
-    if instance.body:
+    try:
         instance.body.delete()
+    except Exception:
+        pass
 
 
 
