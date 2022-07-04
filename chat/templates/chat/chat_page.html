@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block content %}
 
+{% block content %}
 
     <section class="my-4" id="section">
         <div class="row mx-0">
@@ -20,6 +20,7 @@
 
                     <div class="col-md-8 col-12 {% if not room_id %}d-md-flex d-none justify-content-center{% else %}d-flex{% endif %} flex-column p-0 h-100">
                         {% if room_id %}
+
                             <div class="d-flex p-2 px-3 border-bottom align-items-center justify-content-between">
                                 <div class="d-flex align-items-center">
                                     <a href="{% url 'account:account' username=other_user.username %}" target="blank" class="me-2" style="width: 6%">
@@ -53,84 +54,62 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
     </section>
+
 
     <script>
 
-        {% if room_id %}
-            preLoadImage("{{ other_user.image.url }}", "other_user_profile_image")
-            const messageButton = document.getElementById("message-button")
-            const messageField = document.getElementById("message-textarea")
-            const chatMessagesContainer = document.getElementById('chat-messages-container')
-            let chatRoomUrl = "{% url 'api:api-chat-room' username=123456789 %}"
+        const roomQueryLimit = 10
 
-            messageButton.addEventListener('click', function(e) {
-                if (messageField.value.trim()) {
-                  sendChatMessage(messageField.value)
-                  messageField.value = ""
-                }
-            })
-
-            setupMessageField(messageField)
-
-            function setupMessageField(field) {
-                field.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault()}
-                })
-                field.addEventListener('keyup', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && field.value.trim() !== "") { messageButton.click() }
-                })
-            }
-        {% endif %}
-
-        const limit = 10
         const chatRoomsContainer = document.getElementById("chat-room-container")
         const roomsObserveContainer = document.getElementById("observe-container")
-        let url = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${limit}&offset=0`
         let hitsContainer = document.getElementById("hits")
 
+        let roomUrl = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${roomQueryLimit}&offset=0`
+
+        let roomsObserver = createIntersectionObserver(roomsCallback)
+        roomsObserver.observe(roomsObserveContainer)
+
+
+        // intersection observer functions
 
         function createIntersectionObserver(callback) {
-          return new IntersectionObserver(callback, {
-              root: null,        // intersect with viewport
-              rootMargin: '0px', // no margin when computing intersections
-              threshold:  0,   // execute callback when every pixel is visible
+            return new IntersectionObserver(callback, {
+                root: null,        // intersect with viewport
+                rootMargin: '0px', // no margin when computing intersections
+                threshold:  0,   // execute callback when every pixel is visible
             })
         }
 
-        let roomsObserver = createIntersectionObserver(roomsCallback)
+        // end of intersection observer functions
+
+
+        // chat room elements functions
 
         function roomsCallback(entries) {
             for (const entry of entries) {
-                if (entry.isIntersecting) { getNextRoomsPage() }
+              if (entry.isIntersecting) { getNextRoomsPage() }
             }
         }
 
-        roomsObserver.observe(roomsObserveContainer)
-
         function getNextRoomsPage() {
-          fetch(url)
+          fetch(roomUrl)
             .then(response => response.json())
             .then(data => {
-              url = data.next
-              appendChatRoom(data.results)
-              if (!url) {
-                roomsObserver.unobserve(roomsObserveContainer)
-                roomsObserveContainer.remove()
-              }
+                roomUrl = data.next
+                appendChatRoom(data.results)
+                if (!roomUrl) { roomsObserver.unobserve(roomsObserveContainer); roomsObserveContainer.remove()}
             })
         }
 
         function appendChatRoom(data) {
-              data.forEach(function(room) {
+            data.forEach(function(room) {
                 let element = createChatRoomElement(room)
                 roomsObserveContainer.insertAdjacentElement('beforebegin', element)
                 preLoadImage(`${room.other_user.image}`, `${room.other_user.username}_profile_image`)
-              })
-            }
+            })
+        }
 
         function createChatRoomElement(room) {
             let element = document.createElement('a')
@@ -156,25 +135,64 @@
                     </div>
                 </div>
             `
-
             return element
         }
 
+        // end of chat room elements functions
+
+
         {% if room_id %}
-            let messagesObserveContainer = document.getElementById("message-observe-container")
+
+            const chatMessagesContainer = document.getElementById('chat-messages-container')
+            let chatRoomUrl = "{% url 'api:api-chat-room' username=123456789 %}"
+            let roomId = "{{ room_id }}"
+
             let messagesObserver = null
+            let messagesReadObserver = createIntersectionObserver(messagesReadObserverCallback)
+            let messagesObserveContainer = document.getElementById("message-observe-container")
+            const messageButton = document.getElementById("message-button")
+            const messageField = document.getElementById("message-textarea")
             let pageNumber = 1
             let firstUnreadMessage = null
             let firstUnreadMessageFound = false
             let unreadMessagesArray = []
 
-            let roomId = "{{ room_id }}"
             let ws_scheme = window.location.protocol === "http:" ? "ws:" : "wss:"
             let ws_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug %}8001{% endif %}8000" + `/chat/${roomId}/`
             let chatSocket = new WebSocket(ws_path)
+
+            preLoadImage("{{ other_user.image.url }}", "other_user_profile_image")
+
+
+            // message field and button functions
+
+            setupMessageField(messageField)
+
+            messageButton.addEventListener('click', function(e) {
+                if (messageField.value.trim()) {
+                  sendChatMessage(messageField.value)
+                  messageField.value = ""
+                }
+            })
+
+            function setupMessageField(field) {
+                field.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault() }
+                })
+                field.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && field.value.trim() !== "") { messageButton.click() }
+                })
+            }
+
+            // end of message field and button functions
+
+
+            // websocket setup and handling events functions
+
             setupWebsocket()
 
             function setupWebsocket() {
+
                 chatSocket.onopen = function(e) {
                     console.log('websocket opened')
                     chatSocket.send(JSON.stringify({
@@ -185,12 +203,15 @@
 
                 chatSocket.onmessage = function(e) {
                     let data = JSON.parse(e.data)
+
                     switch (data.msg_type) {
                         case "join": setFirstUnreadMsg(JSON.parse(data.first_unread_message)); setupObserveContainer(); break;
+
                         case "standard_message": appendChatMessage(data, true, true); break;
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
                         case "delete_message": removeMessageElement(data.message_id); break;
                         case "set_message_read": markMessageAsRead(data.message_id); break;
+
                         case "error": handleError(data.code, data.message); break;
 
                         case "pagination_exhausted": paginationExhausted(); break;
@@ -207,13 +228,17 @@
                 chatSocket.close()
             }
 
+            // end of websocket setup and handling events functions
+
+
+            // message functions
+
             function loadMessages(messages) {
                 messages = JSON.parse(messages)
                 messages.forEach(function(message) {
-                  if (!firstUnreadMessageFound && !message.is_read) { unreadMessagesArray.push(message) }
-                  appendChatMessage(message, false, false)
+                    if (!firstUnreadMessageFound && !message.is_read) { unreadMessagesArray.push(message) }
+                    appendChatMessage(message, false, false)
                 })
-
                 if (!firstUnreadMessageFound) { scrollIntoFirstUnreadMessage(`${firstUnreadMessage.id}`) }
             }
 
@@ -223,25 +248,23 @@
                 if (isNew) {
                     chatMessagesContainer.insertBefore(messageElement, chatMessagesContainer.firstElementChild)
                     moveChatRoomElement(data)
-                    if (data.username !== "{{ request.user.username }}") { console.log("observed");messagesReadObserver.observe(messageElement) }
+                    if (data.username !== "{{ request.user.username }}") { messagesReadObserver.observe(messageElement) }
                 } else {
                     messagesObserveContainer.insertAdjacentElement('beforebegin', messageElement)
                 }
 
-
-                if (data.username === "{{ request.user.username }}") {
-                    messageElement.addEventListener('contextmenu', function (e) {
-                        e.preventDefault()
-                        let modal = createDeleteChatMessageModal(data)
-                        addModalToSection(modal)
-                        modal = $(`#${modal.id}`)
-                        modal.modal('show')
-                        modal.on("hidden.bs.modal", function (e) { modal.remove() });
-                    })
-                    messageElement.message = data;
-                }
-
+                data.username === "{{ request.user.username }}" ? setupContextMenuEventListener(messageElement, data): null;
                 if (scroll) { $(`#chat-messages-container`).animate({ scrollTop: 0 }, "slow"); }
+            }
+
+            function setupContextMenuEventListener(messageElement, data) {
+                messageElement.addEventListener('contextmenu', function (e) {
+                    e.preventDefault()
+                    let modal = createDeleteChatMessageModal(data)
+                    addModalToSection(modal)
+                    setupModelEvenListeners(modal.id)
+                })
+                messageElement.message = data;
             }
 
 
@@ -266,6 +289,19 @@
                 return div
             }
 
+            function paginationExhausted() {
+                pageNumber = -1
+                messagesObserver.unobserve(messagesObserveContainer)
+                messagesObserveContainer.remove()
+            }
+
+            function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
+
+            // end of message functions
+
+
+            // message observe container functions
+
             function setupObserveContainer() {
                 messagesObserver = createIntersectionObserver(messagesCallback)
                 messagesObserver.observe(messagesObserveContainer)
@@ -277,34 +313,32 @@
                 }
             }
 
-            let messagesReadObserver = createIntersectionObserver(messagesReadObserverCallback)
             function messagesReadObserverCallback(entries) {
                 for (const entry of entries) {
                     if (entry.isIntersecting) {
                         let message_id = entry.target.getAttribute('message_id')
-                        console.log("intersecting", message_id)
-                        if (message_id) { unobserveMessageElements(message_id); sendMessageReadFrame(message_id); }
+                        if (message_id) { unobserveMessageElement(message_id); sendMessageReadFrame(message_id); }
                     }
                 }
             }
 
-            function paginationExhausted() {
-                pageNumber = -1
-                messagesObserver.unobserve(messagesObserveContainer)
-                messagesObserveContainer.remove()
-            }
+            // end of message observe container functions
+
+
+            // move chat room when message created functions
 
             async function moveChatRoomElement(data) {
                 let other_username = data.other_username === "{{ request.user.username }}" ? data.username : data.other_username;
                 let element = document.getElementById(chatRoomElementId(other_username))
 
                 if (!element) {
-                  await fetchChatRoom(other_username)
-                  .then(roomData => {
-                    chatRoomsContainer.insertBefore(createChatRoomElement(roomData[0]), chatRoomsContainer.childNodes[0])
-                    element = document.getElementById(chatRoomElementId(other_username))
-                    preLoadImage(`${roomData[0].other_user.image}`, `${roomData[0].other_user.username}_profile_image`)
-                  })
+                    await fetchChatRoom(other_username)
+                    .then(roomData => {
+                        roomData = roomData[0]
+                        chatRoomsContainer.insertBefore(createChatRoomElement(roomData), chatRoomsContainer.firstElementChild)
+                        element = document.getElementById(chatRoomElementId(other_username))
+                        preLoadImage(`${roomData.other_user.image}`, `${roomData.other_user.username}_profile_image`)
+                    })
                 }
 
                 chatRoomsContainer.insertBefore(element, chatRoomsContainer.firstElementChild)
@@ -312,8 +346,8 @@
             }
 
             async function fetchChatRoom(username) {
-              return await fetch(chatRoomUrl.replace(123456789, username))
-                .then(response => response.json())
+                return await fetch(chatRoomUrl.replace(123456789, username))
+                    .then(response => response.json())
             }
 
             function changeChatRoomUserAndText(other_username, username, message) {
@@ -323,6 +357,11 @@
                 chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":"
                 chatRoomElementText.innerHTML = message
             }
+
+            // end of move chat room when message created functions
+
+
+            // delete message modal functions
 
             function createDeleteChatMessageModal(message) {
                 let modal = document.createElement("div")
@@ -353,15 +392,25 @@
 
             function addModalToSection(modal) { document.getElementById("section").appendChild(modal) }
             function removeModalFromSection(modal_id) { document.getElementById(modal_id)?.remove() }
-            function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
+
+            function setupModelEvenListeners(modal_id) {
+                let modal = $(`#${modal_id}`)
+                modal.modal('show')
+                modal.on("hidden.bs.modal", function () { modal.remove() });
+            }
+
+            // end of delete message modal functions
+
+
+            // unread message functions
 
             function setFirstUnreadMsg(message) {
-                console.log(message)
                 if (message) {
                     message = message[0]
-                    if (message.username !== "{{ request.user.username }}") { firstUnreadMessage = message }
-                    else ( firstUnreadMessageFound = true )
-                } else { firstUnreadMessageFound = true }
+                    message.username !== "{{ request.user.username }}" ? firstUnreadMessage = message : firstUnreadMessageFound = true
+                } else {
+                    firstUnreadMessageFound = true
+                }
             }
 
             async function scrollIntoFirstUnreadMessage(unreadMsgId) {
@@ -376,9 +425,21 @@
                 else { scrollHeight = -msgContainer.prop("scrollHeight") }
 
                 await msgContainer.animate({ scrollTop: scrollHeight }, "slow").promise()
-                if (firstUnreadMessageFound) { observeUnreadMessageElements() }
+                firstUnreadMessageFound ? observeUnreadMessageElements() : null;
             }
 
+            function markMessageAsRead(message_id) {
+                let messageElement = $(`#${message_id}_message`)
+                if (messageElement.length) {
+                    let icons = messageElement.find('.read-icons')
+                    icons.length ? icons.append(`<i class="fa-light fa-check" style="margin-left: -6px"></i>`) : null;
+                }
+            }
+
+            // end of unread message functions
+
+
+            // unread message observer containers functions
             function observeUnreadMessageElements() {
                 unreadMessagesArray.forEach(function(message) {
                     if (message.username !== "{{ request.user.username }}") {
@@ -388,20 +449,12 @@
                 })
             }
 
-            function unobserveMessageElements(message_id) {
+            function unobserveMessageElement(message_id) {
                 let messageElement = document.getElementById(`${message_id}_message`)
                 if (messageElement) { messagesReadObserver.unobserve(messageElement) }
             }
 
-            function markMessageAsRead(message_id) {
-                let messageElement = $(`#${message_id}_message`)
-                if (messageElement.length) {
-                    let icons = messageElement.find('.read-icons')
-                    if (icons.length) {
-                      icons.append(`<i class="fa-light fa-check" style="margin-left: -6px"></i>`)
-                    }
-                }
-            }
+            // end of unread message observer containers functions
 
         {% endif %}
 
@@ -410,6 +463,7 @@
     {% if room_id %}
 
         {# Sending request to the consumer  #}
+
         <script>
 
             function sendChatMessage(message) {
@@ -445,16 +499,18 @@
             }
 
         </script>
+
     {% endif %}
 
-    {#  ids generators  #}
-    <script>
 
+    {#  ids generators  #}
+
+    <script>
         const chatRoomElementId = (username) => `${username}_chat_room_element`
         const chatRoomElementUserId = (username) => `${username}_chat_room_user_element`
         const chatRoomElementTextId = (username) => `${username}_chat_room_text_element`
-
     </script>
+
 
     {# search scripts #}
     <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.5.1/dist/algoliasearch-lite.umd.js" integrity="sha256-EXPXz4W6pQgfYY3yTpnDa3OH8/EPn16ciVsPQ/ypsjk=" crossorigin="anonymous"></script>

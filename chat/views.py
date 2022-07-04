@@ -8,9 +8,10 @@ from .models import ChatRoom
 
 @login_required(login_url=reverse_lazy('account:login'))
 def chat_page(request, username=None):
+    context = {}
+
     if request.method == "GET":
-        context = {}
-        if username:
+        if username:  # If username was passed we should render specific room page
             try:
                 user = Account.objects.get(username=username)
             except Account.DoesNotExist:
@@ -26,5 +27,4 @@ def chat_page(request, username=None):
             })
 
         context['page'] = "chat"
-
         return render(request, 'chat/chat_page.html', context=context)

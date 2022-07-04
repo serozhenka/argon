@@ -1,5 +1,3 @@
-import asyncio
-
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.paginator import Paginator
@@ -20,7 +18,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         """Called when client instantiates a handshake."""
-
         await self.accept()
 
     async def receive_json(self, content, **kwargs):
@@ -37,6 +34,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             
             if message and self.room and room_id == str(self.room.id):
                 created_message = await self.save_chat_room_message(text=message)
+
                 await self.channel_layer.group_send(self.group_name, {
                     'type': 'chat.message',
                     'message': message,
@@ -59,19 +57,23 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         elif command == "delete_message":
             message_id = content.get('message_id')
+
             if self.room and room_id == str(self.room.id) and message_id:
                 if deleted_msg_id := await self.delete_chat_room_message(message_id):
-                    await self.send_json({
-                        'msg_type': MsgType.DELETE_MESSAGE,
+
+                    await self.channel_layer.group_send(self.group_name, {
+                        'type': 'chat.message.delete',
                         "message_id": deleted_msg_id,
                     })
 
         elif command == "set_message_read":
             message_id = content.get('message_id')
+
             if self.room and room_id == str(self.room.id) and message_id:
                 if marked_message_id := await self.set_message_as_read(message_id):
+
                     await self.channel_layer.group_send(self.group_name, {
-                        'type': 'send.message.read',
+                        'type': 'chat.message.read',
                         "message_id": marked_message_id,
                     })
 
@@ -80,8 +82,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.leave_room(str(self.room.id)) if self.room else None
         await self.close(code)
 
+    # Functions sending text frame to the client
+
     async def chat_message(self, event):
-        """Method to send message to the client."""
+        """Method to send message to the group."""
         
         await self.send_json({
             'msg_type': MsgType.STANDARD_MESSAGE,
@@ -93,10 +97,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'id': event.get('id'),
         })
 
-    async def send_message_read(self, event):
-        """Method to send read message id to the client."""
+    async def chat_message_read(self, event):
+        """Method to send read message id to the group."""
+
         await self.send_json({
             'msg_type': MsgType.SET_MESSAGE_READ,
+            "message_id": event.get('message_id'),
+        })
+
+    async def chat_message_delete(self, event):
+        """Method to send delete message id to the group."""
+
+        await self.send_json({
+            'msg_type': MsgType.DELETE_MESSAGE,
             "message_id": event.get('message_id'),
         })
 
@@ -109,12 +122,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'new_page_number': new_page_number,
         })
 
-    async def pagination_exhausted(self):
-        """Method called when no more chat room messages to load."""
+    # End of functions sending text frame to the client
 
-        await self.send_json({'msg_type': MsgType.PAGINATION_EXHAUSTED})
+    # Functions called when user joins a chat room
 
-    # helper functions
     async def join_room(self, room_id: str) -> None:
         """Called when client send a text frame with join command."""
 
@@ -134,8 +145,23 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         except ClientError as e:
             await self.handle_error(e)
 
+    @database_sync_to_async
+    def get_first_unread_message(self, room: ChatRoom):
+        """
+        Method to get first unread message, serialize it if exists and return it.
+        If message does not exist returns None.
+        """
+
+        unread_messages = room.chatroommessage_set.filter(is_read=False).order_by('timestamp')
+        if unread_messages.exists():
+            serializer = ChatRoomMessageSerializer()
+            return serializer.serialize([unread_messages.first()])
+        return None
+
+    # End of functions called when user joins a chat room
+
     async def leave_room(self, room_id: str) -> None:
-        """Called when client disconnects or connection is lost."""
+        """Method called when client disconnects or connection is lost."""
 
         try:
             room = await self.get_chat_room_or_error(room_id)
@@ -147,7 +173,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def handle_error(self, e):
         """Handling incoming errors."""
-
         e.__dict__.update({'msg_type': MsgType.ERROR})
         await self.send_json(e.__dict__)
 
@@ -173,14 +198,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         body = ChatRoomMessageBody.objects.create(text=text)
         message = ChatRoomMessage.objects.create(user=self.scope['user'], room=self.room, body=body)
-
         return message
 
     @database_sync_to_async
     def get_chat_room_messages(self, page_number: Union[str, int]) -> Tuple[Optional[List], Optional[int]]:
         """
-        Method to get old chat room messages and return them based on page number
-        and return them encoded in json.
+            Method to get old chat room messages, paginate them,
+            serialize some of them based on page number. If page number does not
+            exceed paginator page numbers returns Tuple(serialized_messages, next_page_number),
+            else returns Tuple(None, None).
         """
         try:
             page_number = int(page_number)
@@ -204,9 +230,16 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         return None, None
 
+    async def pagination_exhausted(self):
+        """Method sending pagination exhausted event to the client."""
+        await self.send_json({'msg_type': MsgType.PAGINATION_EXHAUSTED})
+
     @database_sync_to_async
     def delete_chat_room_message(self, message_id) -> Optional[str]:
-        """Method to delete chat room message."""
+        """
+            Method to delete chat room message.
+            If found and message user is current user returns message id, else None.
+        """
 
         try:
             msg = ChatRoomMessage.objects.get(id=message_id)
@@ -220,24 +253,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return None
 
     @database_sync_to_async
-    def get_first_unread_message(self, room: ChatRoom):
-        """
-        Method to get first unread message, serialize it if exists and return it.
-        If message does not exist return None
-        """
-
-        unread_messages = room.chatroommessage_set.filter(is_read=False).order_by('timestamp')
-        if unread_messages.exists():
-            serializer = ChatRoomMessageSerializer()
-            return serializer.serialize([unread_messages.first()])
-        return None
-
-    @database_sync_to_async
     def set_message_as_read(self, message_id) -> Optional[str]:
         """
-        Method to set message as read if user requesting method
-        is not current user (user can not mark itself messages as read).
-        If message by given message_id does not exist returns None.
+            Method to set message as read if user requesting method
+            is not current user (user can not mark themselves message as read).
+            If message exists returns message id, else None.
         """
 
         try:
