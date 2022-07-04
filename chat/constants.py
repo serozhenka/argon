@@ -14,4 +14,5 @@ class MsgType(str, Enum):
     ERROR = "error"
 
     PAGINATION_EXHAUSTED = "pagination_exhausted"
+    DISPLAY_LOADING_SPINNER = "display_loading_spinner"
 

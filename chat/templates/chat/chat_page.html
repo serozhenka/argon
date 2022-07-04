@@ -256,6 +256,7 @@
                         case "error": handleError(data.code, data.message); break;
 
                         case "pagination_exhausted": paginationExhausted(); break;
+                        case "display_loading_spinner": displayLoadingSpinner(data.display); break;
                     }
                 }
 

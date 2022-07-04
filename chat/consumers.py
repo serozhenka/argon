@@ -27,7 +27,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         room_id = content.get('room_id')
 
         if command == "join":
+            await self.display_loading_spinner(True)
             await self.join_room(room_id=room_id)
+            await self.display_loading_spinner(False)
 
         elif command == "send":
             message = content.get('message')
@@ -47,13 +49,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         elif command == "load_messages":
             page_number = content.get('page_number')
-
+            await self.display_loading_spinner(True)
             if self.room and room_id == str(self.room.id) and page_number:
                 messages, new_page_number = await self.get_chat_room_messages(page_number)
                 if messages:
                     await self.load_messages(messages, new_page_number)
                 else:
                     await self.pagination_exhausted()
+            await self.display_loading_spinner(False)
 
         elif command == "delete_message":
             message_id = content.get('message_id')
@@ -344,6 +347,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             serializer = ChatRoomMessageSerializer()
             return serializer.serialize([room.last_message])
         return None
+
+    async def display_loading_spinner(self, display):
+        await self.send_json({
+            'msg_type': MsgType.DISPLAY_LOADING_SPINNER,
+            'display': display,
+        })
 
 
 
