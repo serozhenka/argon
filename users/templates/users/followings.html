@@ -36,7 +36,7 @@
           data.forEach(function(user) {
             let div = document.createElement('a')
             div.classList.add('d-flex', 'p-2', 'text-decoration-none', 'link', 'text-dark', 'user-block', 'rounded')
-            div.href = "{% url 'account:account' username=user.username %}"
+            div.href = "{% url 'account:account' username=123456789 %}".replace(123456789, user.username)
             let is_following_by_request_user = user.is_following_by_request_user
 
             div.innerHTML = `
