@@ -261,3 +261,13 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.message-box .hljs {
+    margin-bottom: 0!important;
+    padding: 0!important;
+    background-color: transparent!important;
+}
+
+.message-box p {
+    margin-bottom: 0!important
+}

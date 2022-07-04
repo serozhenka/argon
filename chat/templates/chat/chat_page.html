@@ -278,7 +278,7 @@
 
                 div.innerHTML = `
                     <div class="py-2 px-3 rounded ${'{{ request.user.username }}' === data.username ? "bg-light-blue" : "bg-light-gray"}">
-                        <div class="message-box">${data.message}</div>
+                        <div class="message-box">${validateText(data.message)}</div>
                         <div class="d-flex justify-content-end align-items-center fs-12px">
                             <div class="text-end text-muted mt-1">${data.timestamp}</div>
                             <div class="align-self-end ms-2 read-icons"><i class="fa-light fa-check"></i>${data.is_read ? `<i class="fa-light fa-check" style="margin-left: -6px"></i>` : ""}</div>
@@ -455,6 +455,23 @@
             }
 
             // end of unread message observer containers functions
+
+            function validateText(string) {
+                let md = window.markdownit().set({
+                    highlight: function (str, lang) {
+                        if (lang && hljs.getLanguage(lang)) {
+                            try {
+                            return '<pre class="hljs"><code>' +
+                               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                               '</code></pre>';
+                        } catch (__) {}
+                        } else {
+                            return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+                        }
+                    }
+                });
+                return md.render(string);
+            }
 
         {% endif %}
 
