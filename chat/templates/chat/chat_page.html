@@ -130,7 +130,9 @@
                         `<span class="text-primary" id="${chatRoomElementUserId(room.other_user.username)}">
                             ${room.last_message.user.username === "{{ request.user.username }}" ? "you" : room.last_message.user.username }:
                         </span>
-                        <span id="${chatRoomElementTextId(room.other_user.username)}">${room.last_message.body.text}</span>` : " "
+                        <span id="${chatRoomElementTextId(room.other_user.username)}">
+                            ${getValidatedText(room.last_message.body.text)}
+                        </span>` : " "
                         }
                     </div>
                 </div>
@@ -138,7 +140,45 @@
             return element
         }
 
+        function removeChatRoomElement(other_username) {
+            document.getElementById(chatRoomElementId(other_username))?.remove()
+        }
+
         // end of chat room elements functions
+
+
+        // syntax highlight functions
+
+        function getValidatedText(text) {
+            let validatedText = validateText(text)
+            validatedText = validatedText.slice(1, 4) === "pre" ? '<span class="text-muted">shitcode as usual</span>' : validatedText.slice(3, validatedText.length - 5);
+            return validatedText
+        }
+
+        function getEditValidatedText(text) {
+            let validatedText = validateText(text)
+            validatedText = validatedText.slice(1, 4) === "pre" ? text : validatedText.slice(3, validatedText.length - 5);
+            return validatedText
+        }
+
+        function validateText(string) {
+            let md = window.markdownit().set({
+                highlight: function (str, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        try {
+                        return '<pre class="hljs"><code>' +
+                           hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                           '</code></pre>';
+                    } catch (__) {}
+                    } else {
+                        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+                    }
+                }
+            });
+            return md.render(string);
+        }
+
+        // endif
 
 
         {% if room_id %}
@@ -209,7 +249,8 @@
 
                         case "standard_message": appendChatMessage(data, true, true); break;
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
-                        case "delete_message": removeMessageElement(data.message_id); break;
+                        case "delete_message": removeMessageElement(data.message_id, data.is_last_message, data.last_message, data.other_username); break;
+                        case "edit_message": editMessageElement(data.message_id, data.text, data.is_last_message, data.other_username); break;
                         case "set_message_read": markMessageAsRead(data.message_id); break;
 
                         case "error": handleError(data.code, data.message); break;
@@ -295,7 +336,39 @@
                 messagesObserveContainer.remove()
             }
 
-            function removeMessageElement(message_id) { document.getElementById(`${message_id}_message`)?.remove() }
+            function removeMessageElement(message_id, isLastMessage, lastMessage, otherUsername) {
+                lastMessage = JSON.parse(lastMessage)
+                lastMessage = lastMessage ? lastMessage[0] : lastMessage
+                document.getElementById(`${message_id}_message`)?.remove()
+
+                if (isLastMessage) {
+                    let roomElement = $(`#${chatRoomElementId(otherUsername)}`)
+                    if (roomElement.length) {
+                        if (lastMessage) {
+                            changeChatRoomUserAndText(otherUsername, lastMessage.username, lastMessage.message)
+                        } else {
+                            removeChatRoomElement(otherUsername)
+                        }
+                    }
+                }
+            }
+
+            function editMessageElement(message_id, text, isLastMessage, otherUsername) {
+                let messageElement = $(`#${message_id}_message`)
+                if (messageElement.length) {
+                    messageElement.find('.message-box').html(validateText(text))
+                }
+
+                if (isLastMessage) {
+                    let roomElement = $(`#${chatRoomElementId(otherUsername)}`)
+                    if (roomElement.length) { changeChatRoomUserAndText(otherUsername, null, text) }
+                }
+            }
+
+            function editMessage(modal, message_id) {
+                let newValue = $(modal).find('textarea').val()
+                if (newValue) { sendEditMessage(message_id, newValue) }
+            }
 
             // end of message functions
 
@@ -354,8 +427,8 @@
                 let chatRoomElementUser = document.getElementById(chatRoomElementUserId(other_username))
                 let chatRoomElementText = document.getElementById(chatRoomElementTextId(other_username))
 
-                chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":"
-                chatRoomElementText.innerHTML = message
+                username ? chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":" : null;
+                chatRoomElementText.innerHTML = getValidatedText(message)
             }
 
             // end of move chat room when message created functions
@@ -373,15 +446,14 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="min-height: 200px">
                             <div class="modal-body d-flex flex-column justify-content-center text-center">
-                                <div class="h2">Remove message</div>
+                                <div class="h2">Edit message</div>
                                 <div class="text-muted">Unsending a message will remove it for everyone.</div>
-                                <div class="fs-14px text-muted mt-3 w-75 mx-auto">
-                                    "${message.message}"
-                                </div>
+                                <textarea class="form-control disable-focus text-muted mt-3" rows="7" style="resize: none" maxlength="800">${getEditValidatedText(message.message)}</textarea>
                             </div>
                             <div class="modal-footer justify-content-around p-0">
-                                <div class="fs-6 text-danger border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-left-radius:7px" onclick="$('#${modal.id}').modal('hide'); deleteMessage(${message.id})">Remove</div>
-                                <div class="fs-6 border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-right-radius:7px" onclick="$('#${modal.id}').modal('hide')">Cancel</div>
+                                <div class="fs-6 text-primary border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-left-radius:7px" onclick="editMessage(this.closest('.modal'), ${message.id}); $('#${modal.id}').modal('hide');">Save</div>
+                                <div class="fs-6 text-danger border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="" onclick="$('#${modal.id}').modal('hide'); deleteMessage(${message.id})">Remove</div>
+                                <div class="fs-6 border flex-grow-1 m-0 text-center p-2 bg-gray-color-hover" style="border-bottom-left-radius:7px" onclick="$('#${modal.id}').modal('hide');">Back</div>
                             </div>
                         </div>
                     </div>
@@ -456,23 +528,6 @@
 
             // end of unread message observer containers functions
 
-            function validateText(string) {
-                let md = window.markdownit().set({
-                    highlight: function (str, lang) {
-                        if (lang && hljs.getLanguage(lang)) {
-                            try {
-                            return '<pre class="hljs"><code>' +
-                               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-                               '</code></pre>';
-                        } catch (__) {}
-                        } else {
-                            return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-                        }
-                    }
-                });
-                return md.render(string);
-            }
-
         {% endif %}
 
     </script>
@@ -503,6 +558,15 @@
                 chatSocket.send(JSON.stringify({
                     'command': 'delete_message',
                     'message_id': message_id,
+                    'room_id': roomId,
+                }))
+            }
+
+            function sendEditMessage(message_id, text) {
+                chatSocket.send(JSON.stringify({
+                    'command': 'edit_message',
+                    'message_id': message_id,
+                    'text': text,
                     'room_id': roomId,
                 }))
             }
