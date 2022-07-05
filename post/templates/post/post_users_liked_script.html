@@ -1,0 +1,101 @@
+{% load static %}
+
+<script>
+
+    const postUsersLikedLimit = 20;
+    const postUsersLikedUrlTemplate = "{% url 'api:api-post-like-list' post_id=123456789 %}" + `?limit=${postUsersLikedLimit}&offset=0`
+    let postUsersLikedUrl = postUsersLikedUrlTemplate
+    let postUsersLikedContainer = null;
+    let postUsersLikedObserveContainer = null;
+    let postUserLikedObserver = null;
+
+    function postLikeElementClick(post_id) {
+        postUsersLikedUrl = postUsersLikedUrlTemplate.replace(123456789, post_id)
+        let modal = createPostUsersLikedModal()
+        addPostLikeModalToSection(modal)
+        setupPostLikeModelEvenListeners(modal.id)
+
+        postUsersLikedContainer = document.getElementById('users-liked-container')
+        postUsersLikedObserveContainer = document.getElementById('post-users-liked-observe-container')
+        postUserLikedObserver = createIntersectionObserver(postUsersLikedCallback)
+        postUserLikedObserver.observe(postUsersLikedObserveContainer)
+    }
+
+    function addPostLikeModalToSection(modal) { document.getElementById("section").appendChild(modal) }
+    function removePostLikeModalFromSection(modal_id) { document.getElementById(modal_id)?.remove() }
+
+    function setupPostLikeModelEvenListeners(modal_id) {
+        let modal = $(`#${modal_id}`)
+        modal.modal('show')
+        modal.on("hidden.bs.modal", function () { modal.remove() });
+    }
+
+    function createPostUsersLikedModal() {
+        let modal = document.createElement("div")
+        modal.classList.add("modal")
+        modal.tabIndex = -1
+        modal.id = "post-users-liked-modal"
+
+        modal.innerHTML += `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="min-height: 200px">
+                    <div class="modal-body d-flex flex-column justify-content-center">
+                        <div class="h2 text-center">Likes</div>
+                        <div id="users-liked-container" class="custom-scrollbar" style="height: 300px; overflow-y: auto; overflow-x: hidden">
+                            <div id="post-users-liked-observe-container" class="d-block py-3 h-25"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+
+        return modal
+    }
+
+    function getNextPostUsersLikedPage() {
+        fetch(postUsersLikedUrl)
+        .then(response => response.json())
+        .then(data => {
+            postUsersLikedUrl = data.next
+            usersContainerAppendData(data.results)
+            if (!postUsersLikedUrl) {
+                postUserLikedObserver.unobserve(postUsersLikedObserveContainer)
+                postUsersLikedObserveContainer.remove()
+            }
+        })
+    }
+
+    function usersContainerAppendData(results) {
+        results.forEach(function(user) {
+            let div = document.createElement('a')
+            div.classList.add('d-flex', 'p-2', 'text-decoration-none', 'link', 'text-dark', 'user-block', 'rounded')
+            div.href = "{% url 'account:account' username=123456789 %}".replace(123456789, user.username)
+
+            div.innerHTML = `
+                <div class="col-1 me-3">
+                    <img class="img-fluid rounded-circle position-relative top-50" src="{% static 'images/default.png' %}" alt="user-profile-image" id="${user.username}_image" style="transform: translateY(-50%);">
+                </div>
+                <div class="col-11 d-flex align-items-center">
+                    <div><span class="fw-bold">${user.username}</span><br/><span class="text-muted">${user.name}</span></div>
+                </div>
+            `
+            postUsersLikedContainer.insertBefore(div, postUsersLikedObserveContainer)
+            preLoadImage(user.image, `${user.username}_image`)
+        })
+    }
+
+    function createIntersectionObserver(callback) {
+        return new IntersectionObserver(callback, {
+            root: null,        // intersect with viewport
+            rootMargin: '0px', // no margin when computing intersections
+            threshold:  0,   // execute callback when every pixel is visible
+        })
+    }
+
+    function postUsersLikedCallback(entries) {
+        for (const entry of entries) {
+          if (entry.isIntersecting) { getNextPostUsersLikedPage() }
+        }
+    }
+
+</script>

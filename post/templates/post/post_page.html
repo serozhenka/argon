@@ -3,7 +3,7 @@
 
 {% block content %}
 
-    <section class="mt-5">
+    <section class="mt-5" id="section">
         <div class="row mx-0">
             <div class="col-lg-9 col-md-8 col-sm-9 col-11 mx-auto">
                 <div class="row bg-light rounded box-shadow">
@@ -60,7 +60,7 @@
                                 <i class="{% if is_liked %}fa-solid{% else %}fa-light{% endif %} text-danger fa-heart fs-5 me-3" id="{{post.id}}_like" data-post_id="{{post.id}}" data-action="{% if is_liked %}dislike{% else %}like{% endif %}"></i>
                             </div>
 
-                            <div class="mt-1">
+                            <div class="mt-1 link" onclick="postLikeElementClick({{ post.id }})">
                                <span class="fw-bold" id="{{ post.id }}_likes_count">{{post.likes_count}}</span> <span id="{{ post.id }}_like_word">like{{ post.likes_count|pluralize:'s' }}</span>
                             </div>
 
@@ -70,9 +70,10 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
+
+    {% include 'post/post_users_liked_script.html' %}
 
     <script>
 

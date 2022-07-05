@@ -4,10 +4,10 @@ from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 
 from .permissions import FollowingPrivatePermission
-from .serializers import AccountSerializer, PostSerializer, CommentSerializer, ChatRoomSerializer
+from .serializers import AccountSerializer, PostSerializer, CommentSerializer, ChatRoomSerializer, SimpleAccountSerializer
 from chat.models import ChatRoom
 from follow.models import Followers, Following
-from post.models import Post, Comment
+from post.models import Post, Comment, PostLike
 from users.models import Account
 
 
@@ -103,3 +103,19 @@ class ChatRoomApiView(generics.ListAPIView):
         )
 
         return chat_room
+
+class UsersLikePostApiView(generics.ListAPIView):
+    serializer_class = SimpleAccountSerializer
+    pagination_class = LimitOffsetPagination
+    permission_classes = [FollowingPrivatePermission]
+
+    def get_queryset(self):
+        try:
+            post = Post.objects.get(id=self.kwargs.get('post_id'))
+        except Post.DoesNotExist:
+            raise Http404
+
+        users = Account.objects.filter(
+            id__in=PostLike.objects.filter(post=post, is_liked=True).values_list('user', flat=True)
+        ).order_by('last_login')
+        return users

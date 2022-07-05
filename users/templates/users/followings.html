@@ -41,7 +41,7 @@
 
             div.innerHTML = `
                 <div class="col-1 me-3">
-                    <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="user-profile-image" id="${user.username}_image">
+                    <img class="img-fluid rounded-circle position-relative top-50" src="{% static 'images/default.png' %}" alt="user-profile-image" id="${user.username}_image" style="transform: translateY(-50%);">
                 </div>
                 <div class="col-11 d-flex align-items-center justify-content-between">
                     <div><span class="fw-bold">${user.username}</span><br/><span class="text-muted">${user.name}</span></div>

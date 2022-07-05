@@ -25,44 +25,44 @@
     </div>
 </nav>
 
-<script>
-
-    let ws_userOnlineStatusSocket_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% else %}8000{% endif %}" + `/user/online/`
-    let userOnlineStatusSocket = new ReconnectingWebSocket(ws_userOnlineStatusSocket_path)
-
-    userOnlineStatusSocket.onopen = function(e) {
-        console.log('userOnlineStatusSocket websocket opened')
-    }
-
-    userOnlineStatusSocket.onmessage = function(e) {
-        let data = JSON.parse(e.data)
-
-        switch (data.msg_type) {
-            case "user_online": changeUserOnlineIcon(data.username, data.is_online); break;
-        }
-    }
-
-    userOnlineStatusSocket.onclose = (e) => { console.log("Websocket disconnected")}
-    userOnlineStatusSocket.onerror = (e) => {userOnlineStatusSocket.close(); console.log("Unknown error happened")}
-
-    function changeUserOnlineIcon(username, is_online) {
-        let chatRoomElement = $(`#${username}_chat_room_element`);
-        if(!chatRoomElement.length) { return null }
-
-        let onlineStatusContainer = chatRoomElement.find(".online-status-container")
-        if(!onlineStatusContainer.length) { return null }
-
-        if (is_online) {
-            if (!onlineStatusContainer.hasClass('online-active')) {
-                onlineStatusContainer.removeClass('online-inactive')
-                onlineStatusContainer.addClass('online-active')
-            }
-        } else {
-            if (!onlineStatusContainer.hasClass('online-inactive')) {
-                onlineStatusContainer.removeClass('online-active')
-                onlineStatusContainer.addClass('online-inactive')
-            }
-        }
-    }
-
-</script>
+{#<script>#}
+{##}
+{#    let ws_userOnlineStatusSocket_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% else %}8000{% endif %}" + `/user/online/`#}
+{#    let userOnlineStatusSocket = new ReconnectingWebSocket(ws_userOnlineStatusSocket_path)#}
+{##}
+{#    userOnlineStatusSocket.onopen = function(e) {#}
+{#        console.log('userOnlineStatusSocket websocket opened')#}
+{#    }#}
+{##}
+{#    userOnlineStatusSocket.onmessage = function(e) {#}
+{#        let data = JSON.parse(e.data)#}
+{##}
+{#        switch (data.msg_type) {#}
+{#            case "user_online": changeUserOnlineIcon(data.username, data.is_online); break;#}
+{#        }#}
+{#    }#}
+{##}
+{#    userOnlineStatusSocket.onclose = (e) => { console.log("Websocket disconnected")}#}
+{#    userOnlineStatusSocket.onerror = (e) => {userOnlineStatusSocket.close(); console.log("Unknown error happened")}#}
+{##}
+{#    function changeUserOnlineIcon(username, is_online) {#}
+{#        let chatRoomElement = $(`#${username}_chat_room_element`);#}
+{#        if(!chatRoomElement.length) { return null }#}
+{##}
+{#        let onlineStatusContainer = chatRoomElement.find(".online-status-container")#}
+{#        if(!onlineStatusContainer.length) { return null }#}
+{##}
+{#        if (is_online) {#}
+{#            if (!onlineStatusContainer.hasClass('online-active')) {#}
+{#                onlineStatusContainer.removeClass('online-inactive')#}
+{#                onlineStatusContainer.addClass('online-active')#}
+{#            }#}
+{#        } else {#}
+{#            if (!onlineStatusContainer.hasClass('online-inactive')) {#}
+{#                onlineStatusContainer.removeClass('online-active')#}
+{#                onlineStatusContainer.addClass('online-inactive')#}
+{#            }#}
+{#        }#}
+{#    }#}
+{##}
+{#</script>#}
