@@ -1,5 +1,7 @@
+from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.db.models import Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from typing import Tuple, List, Union, Optional
@@ -8,6 +10,7 @@ from .constants import MsgType, CHAT_ROOM_MESSAGE_PAGE_SIZE
 from .exceptions import ClientError
 from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 from .utils import calculate_timestamp, ChatRoomMessageSerializer
+from users.models import Account
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -111,7 +114,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def chat_message(self, event):
         """Method to send message to the group."""
-        
+
         await self.send_json({
             'msg_type': MsgType.STANDARD_MESSAGE,
             'message': event.get('message'),
@@ -355,9 +358,91 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         })
 
 
+class OnlineUserStatusConsumer(AsyncJsonWebsocketConsumer):
 
-    
-    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.group_name: Optional[str] = None
+        self.chat_rooms_usernames = Optional[list]
+
+    async def connect(self) -> None:
+        """Method to create connection when client instantiates a handshake."""
+
+        if not self.scope['user'].is_authenticated:
+            await self.disconnect(1000)
+            return
+
+        self.group_name = self.scope['user'].username
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.update_user_status("connect")
+        await self.accept()
+
+    async def disconnect(self, code) -> None:
+        """Method to terminate the connection when client disconnects or connection is lost."""
+
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.update_user_status('disconnect')
+        await self.close(code)
+
+    async def user_online_message(self, event) -> None:
+        """Method to send online user status message to the group."""
+
+        await self.send_json({
+            'msg_type': "user_online",
+            'username': event.get('username'),
+            'is_online': event.get('is_online'),
+        })
+
+    @database_sync_to_async
+    def update_user_status(self, status: str) -> None:
+        """
+        Method to update user online status and notify users
+        if client connects or disconnects.
+        """
+
+        user = Account.objects.get(id=self.scope['user'].id)
+
+        if status == "connect":
+            async_to_sync(self.notify_online_status)(True) if user.is_online == 0 else None
+            user.is_online += 1
+
+        elif status == "disconnect":
+            async_to_sync(self.notify_online_status)(False) if user.is_online == 1 else None
+            user.is_online -= 1
+        user.save()
+
+    async def notify_online_status(self, is_online: bool) -> None:
+        """
+        Method to notify users, who current user have active chat room with,
+        that current user online status has changed.
+        """
+
+        self.chat_rooms_usernames = await self.get_chatroom_username_list()
+
+        for username in self.chat_rooms_usernames:
+            await self.channel_layer.group_send(username, {
+                'type': 'user.online.message',
+                'username': self.scope['user'].username,
+                'is_online': is_online,
+            })
+
+    @database_sync_to_async
+    def get_chatroom_username_list(self) -> list:
+        """Method to get the list of usernames who current user have active chat room with."""
+
+        user = self.scope['user']
+        usernames = []
+
+        usernames_tuple = ChatRoom.objects.filter(
+            (Q(user1=user) | Q(user2=user)),
+            last_message__isnull=False
+        ).values_list('user1__username', 'user2__username')
+
+        for username1, username2 in usernames_tuple:
+            usernames.append(username1 if username1 != user.username else username2)
+
+        return usernames
+
 
 
 

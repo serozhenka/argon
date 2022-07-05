@@ -1,6 +1,7 @@
 {% load static %}
 
 <script>
+    let ws_scheme = window.location.protocol === "http:" ? "ws:" : "wss:"
     let userUrl = "{% url 'account:account' username=123456789 %}"
     let currentUserUrl = userUrl.replace(123456789, "{{ request.user.username }}")
     let simplePostHeader = {

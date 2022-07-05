@@ -9,7 +9,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['username', 'name', 'bio', 'image', 'is_public', 'is_following_by_request_user']
+        fields = ['username', 'name', 'bio', 'image', 'is_public', 'is_following_by_request_user', 'online']
 
     def get_is_following_by_request_user(self, obj):
         return self.context['request'].user.following.is_following(obj)
@@ -18,7 +18,7 @@ class AccountSerializer(serializers.ModelSerializer):
 class SimpleAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ['username', 'name', 'image']
+        fields = ['username', 'name', 'image', 'online']
 
 
 class PostImageSerializer(serializers.ModelSerializer):

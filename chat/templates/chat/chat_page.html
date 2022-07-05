@@ -118,8 +118,9 @@
             element.href = "{% url 'chat:chat-page' username=123456789 %}".replace(123456789, room.other_user.username)
 
             element.innerHTML = `
-                <div class="col-2 me-2">
+                <div class="col-2 me-2 position-relative">
                     <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" alt="" id="${room.other_user.username}_profile_image">
+                    <div class="online-status-container online-${room.other_user.online ? "active" : "inactive"}"></div>
                 </div>
                 <div class="col-10 d-flex flex-column">
                     <div class="fw-bold">
@@ -197,7 +198,6 @@
             let firstUnreadMessageFound = false
             let unreadMessagesArray = []
 
-            let ws_scheme = window.location.protocol === "http:" ? "ws:" : "wss:"
             let ws_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug %}8001{% endif %}8000" + `/chat/${roomId}/`
             let chatSocket = new WebSocket(ws_path)
 

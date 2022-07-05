@@ -7,6 +7,7 @@
     --light-blue-color: #e1eff6;
     --link-color: #19a5e8;
     --hover-link-color: #0f6a94;
+    --online-icon-color: #40b340;
 }
 
 body {
@@ -271,3 +272,32 @@ body {
 .message-box p {
     margin-bottom: 0!important
 }
+
+.online-status-container {
+    width: 25%;
+    height: 27%;
+    border-radius: 50%;
+    background-color: #40b340;
+    border: 2px solid var(--main-bg-color);
+    bottom: 0;
+    right: 0;
+    position: absolute;
+}
+
+.online-active {
+    background-color: #40b340;
+    border: 2px solid var(--main-bg-color);
+}
+
+.online-inactive {
+    background-color: transparent;
+    border: none;
+}
+
+@media (max-width: 768px) {
+    .online-status-container {
+        width: 20%;
+        height: 20%;
+    }
+}
+

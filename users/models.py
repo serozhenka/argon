@@ -67,3 +67,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
     def image_url(self):
         return self.image.url
+
+    @property
+    def online(self):
+        return self.is_online != 0
