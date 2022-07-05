@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'post.apps.PostConfig',
     'chat.apps.ChatConfig',
+    'notifications.apps.NotificationsConfig',
 ]
 
 MIDDLEWARE = [
@@ -177,3 +178,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+BASE_URL = "http://localhost:8000"

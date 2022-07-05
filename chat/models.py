@@ -1,8 +1,10 @@
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from typing import Optional
 
+from notifications.models import Notification
 from users.models import Account
 
 def get_message_body_image_path(instance: 'ChatRoomMessageBody', filename: str) -> str:
@@ -47,6 +49,7 @@ class ChatRoomMessage(models.Model):
     body = models.OneToOneField('ChatRoomMessageBody', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False, db_index=True)
+    notifications = GenericRelation(Notification)
 
     def __str__(self) -> str:
         return str(self.id)

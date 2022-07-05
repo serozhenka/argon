@@ -1,10 +1,13 @@
 from datetime import datetime
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation, ContentType
 from django.db import models
 from django.db.models import QuerySet
+from django.urls import reverse
 from django.utils import timezone
 from typing import Union, List
 
+from notifications.models import Notification
 from users.models import Account
 
 class Following(models.Model):
@@ -12,6 +15,7 @@ class Following(models.Model):
     users_following: Union[QuerySet, List[Account]] = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name='users_following', blank=True
     )
+    notifications = GenericRelation(Notification)
 
     def __str__(self):
         return self.user.email
@@ -24,7 +28,7 @@ class Following(models.Model):
 
     def add_following(self, other_user: settings.AUTH_USER_MODEL):
         """
-        First user subscribes from second user
+        First user subscribes to second user
             1. second user is added to first's user following list
             2. first user is added to second's user followers list
         """
@@ -38,6 +42,8 @@ class Following(models.Model):
 
         if self.user not in ou_followers_model.users_followers.all():
             ou_followers_model.users_followers.add(self.user)
+
+        self.create_following_notification(sender=self.user, receiver=other_user)
 
     def remove_following(self, other_user: settings.AUTH_USER_MODEL):
         """
@@ -53,6 +59,21 @@ class Following(models.Model):
 
         if self.user in ou_followers_model.users_followers.all():
             ou_followers_model.users_followers.remove(self.user)
+
+    def create_following_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
+        """Method to create notification when sender follows receiver."""
+
+        # clear previous notifications
+        Notification.objects.filter(sender=sender, receiver=receiver, action_name="follow").delete()
+
+        self.notifications.create(
+            sender=sender,
+            receiver=receiver,
+            action_name="follow",
+            message=f"{sender.username} started following you",
+            redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
+            content_type=ContentType.objects.get_for_model(self),
+        )
 
 
 class Followers(models.Model):
@@ -98,6 +119,7 @@ class FollowingRequest(models.Model):
     receiver: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='receiver')
     is_active: bool = models.BooleanField(default=True)
     created: datetime = models.DateTimeField()
+    notifications = GenericRelation(Notification)
 
     def __str__(self):
         return f'{self.sender}-{self.receiver}'
@@ -118,6 +140,8 @@ class FollowingRequest(models.Model):
             self.is_active = False
             self.save()
 
+            self.create_accept_fr_notification(sender=self.receiver, receiver=self.sender)
+
     def decline(self):
         """
         Receiver declines sender's following request
@@ -128,6 +152,8 @@ class FollowingRequest(models.Model):
             self.is_active = False
             self.save()
 
+            self.create_declined_fr_notification(sender=self.receiver, receiver=self.sender)
+
     def cancel(self):
         """
         Sender cancels following request to the receiver
@@ -136,6 +162,38 @@ class FollowingRequest(models.Model):
         if self.is_active:
             self.is_active = False
             self.save()
+
+    def create_accept_fr_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
+        """Method to create notification when sender accepts receiver friend request."""
+
+        # clear previous requests
+        Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
+        Notification.objects.filter(sender=sender, receiver=receiver, action_name="accept_fr").delete()
+
+        self.notifications.create(
+            sender=sender,
+            receiver=receiver,
+            action_name="accept_fr",
+            message=f"{sender.username} accepted your following request",
+            redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
+            content_type=ContentType.objects.get_for_model(self),
+        )
+
+    def create_declined_fr_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
+        """Method to create notification when sender declines receiver friend request."""
+
+        # clear previous requests
+        Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
+        Notification.objects.filter(sender=sender, receiver=receiver, action_name="decline_fr").delete()
+
+        self.notifications.create(
+            sender=sender,
+            receiver=receiver,
+            action_name="decline_fr",
+            message=f"{sender.username} declined your following request",
+            redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
+            content_type=ContentType.objects.get_for_model(self),
+        )
 
 
 

@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from notifications.models import Notification
 from users.models import Account
 
 def get_post_image_path(instance: 'PostImage', filename: str) -> str:
@@ -47,6 +49,7 @@ class PostLike(models.Model):
     user: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     post: Post = models.ForeignKey(Post, on_delete=models.CASCADE)
     is_liked: bool = models.BooleanField(default=True)
+    notifications = GenericRelation(Notification)
 
 
 class Comment(models.Model):
@@ -55,6 +58,7 @@ class Comment(models.Model):
     post: Post = models.ForeignKey(Post, on_delete=models.CASCADE)
     description: str = models.CharField(max_length=80, blank=True)
     created: datetime = models.DateTimeField(auto_now_add=True)
+    notifications = GenericRelation(Notification)
 
     def __str__(self):
         return f'{self.id} by {self.user.username}'
