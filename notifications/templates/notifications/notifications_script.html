@@ -34,6 +34,8 @@
             } else if (msg_type === "new_notification") {
                 handleNotifications(JSON.parse(data.notifications), true)
                 handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
+            } else if (msg_type === "delete_notification") {
+                handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
             }
 
         }

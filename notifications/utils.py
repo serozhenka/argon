@@ -17,6 +17,12 @@ def send_notification_to_channel_layer(notification, notifications_to_delete_id_
         'notifications_to_delete_id_list': notifications_to_delete_id_list,
     })
 
+def send_notification_delete_to_channel_layer(username, notifications_to_delete_id_list):
+    async_to_sync(channel_layer.group_send)(f"notifications_{username}", {
+        'type': 'notification.delete',
+        'notifications_to_delete_id_list': notifications_to_delete_id_list,
+    })
+
 
 class NotificationsSerializer(Serializer):
 

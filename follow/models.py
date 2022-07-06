@@ -10,7 +10,7 @@ from django.utils import timezone
 from typing import Union, List
 
 from .utils import clear_fr_notifications, clear_following_notifications
-from notifications.utils import send_notification_to_channel_layer
+from notifications.utils import send_notification_to_channel_layer, send_notification_delete_to_channel_layer
 from notifications.models import Notification
 from users.models import Account
 
@@ -67,7 +67,10 @@ class Following(models.Model):
         if self.user in ou_followers_model.users_followers.all():
             ou_followers_model.users_followers.remove(self.user)
 
-        clear_following_notifications(sender=self.user, receiver=other_user)
+        send_notification_delete_to_channel_layer(
+            other_user.username,
+            clear_following_notifications(sender=self.user, receiver=other_user)
+        )
 
     def create_following_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
         """Method to create notification when sender follows receiver."""

@@ -44,10 +44,15 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def notification_send_new(self, event):
-        print(event.get('notifications_to_delete_id_list'))
         await self.send_json({
             'msg_type': NotificationType.NEW_NOTIFICATION,
             'notifications': event.get('notification'),
+            'notifications_to_delete_id_list': event.get('notifications_to_delete_id_list'),
+        })
+
+    async def notification_delete(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.DELETE_NOTIFICATION,
             'notifications_to_delete_id_list': event.get('notifications_to_delete_id_list'),
         })
 
