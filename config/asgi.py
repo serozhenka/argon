@@ -7,6 +7,7 @@ from django.core.asgi import get_asgi_application
 from django.urls import path
 
 from chat.consumers import ChatConsumer, OnlineUserStatusConsumer
+from notifications.consumers import NotificationConsumer
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 # Initialize Django ASGI application early to ensure the AppRegistry
@@ -18,8 +19,9 @@ application = ProtocolTypeRouter({
     "websocket": AllowedHostsOriginValidator(
         AuthMiddlewareStack(
             URLRouter([
-                path("user/online/", OnlineUserStatusConsumer.as_asgi()),
+                path("notifications/", NotificationConsumer.as_asgi()),
                 path("chat/<str:room_id>/", ChatConsumer.as_asgi()),
+                # path("user/online/", OnlineUserStatusConsumer.as_asgi()),
             ])
         )
     ),

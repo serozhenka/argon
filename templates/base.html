@@ -45,6 +45,10 @@
 
     {% block content %} {% endblock content %}
 
+    {% if request.user.is_authenticated %}
+        {% include 'notifications/notifications_script.html' %}
+    {% endif %}
+
     <script src="https://kit.fontawesome.com/bfb61e7d57.js" crossorigin="anonymous"></script>
 {#    <script src="https://kit.fontawesome.com/86d69eea13.js" crossorigin="anonymous"></script>#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.0.0-alpha.2/cropper.css" integrity="sha512-5ZQRy5L3cl4XTtZvjaJRucHRPKaKebtkvCWR/gbYdKH67km1e18C1huhdAc0wSnyMwZLiO7nEa534naJrH6R/Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />

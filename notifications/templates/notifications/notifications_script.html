@@ -1,0 +1,90 @@
+<script>
+
+    let ws_notifications_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% endif %}8000" + `/notifications/`
+    let notificationsSocket = new WebSocket(ws_notifications_path)
+    let notificationsPageNumber = 1;
+    let notificationsContainer = document.getElementById("notifications-container")
+
+    let notificationsObserveContainer = document.getElementById("notifications-observe-container")
+    let notificationsObserver = createNotificationsIntersectionObserver(notificationsCallback)
+    notificationsObserver.observe(notificationsObserveContainer)
+
+    setupNotificationsWebsocket()
+
+    function setupNotificationsWebsocket() {
+
+        notificationsSocket.onopen = function(e) {
+            console.log('notifications websocket opened')
+        }
+
+        notificationsSocket.onmessage = function(e) {
+            let data = JSON.parse(e.data)
+            let msg_type = data.msg_type
+
+            if (msg_type === "load_notifications") {
+                setNotificationsPageNumber(data.new_page_number)
+                handleNotifications(JSON.parse(data.notifications))
+                console.log(data.notifications)
+            } else if (msg_type === "pagination_exhausted") {
+                setNotificationsPageNumber(-1)
+                paginationExhausted()
+            }
+
+        }
+
+        notificationsSocket.onclose = (e) => {console.log("Websocket disconnected")}
+        notificationsSocket.onerror = (e) => {console.log("Unknown error happened")}
+    }
+
+    function createNotificationsIntersectionObserver(callback) {
+        return new IntersectionObserver(callback, {
+            root: null,        // intersect with viewport
+            rootMargin: '0px', // no margin when computing intersections
+            threshold:  0,   // execute callback when every pixel is visible
+        })
+    }
+
+    function notificationsCallback(entries) {
+        for (const entry of entries) {
+          if (entry.isIntersecting) { getNextNotificationsPage(notificationsPageNumber) }
+        }
+    }
+
+    function setNotificationsPageNumber(page_number) { notificationsPageNumber = page_number }
+
+    function paginationExhausted() {
+        notificationsObserver.unobserve(notificationsObserveContainer)
+        notificationsObserveContainer?.remove()
+    }
+
+    function handleNotifications(notifications) {
+        console.log(typeof notifications)
+        notifications.forEach(function (notification) {
+            appendNotification(notification)
+        })
+    }
+
+    function appendNotification(notification) {
+        let div = document.createElement('div')
+        div.classList.add('p-3')
+        div.innerHTML = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab commodi consequatur deleniti esse exercitationem illo iste maxime nostrum numquam, tempora tempore voluptatum! Amet incidunt officiis quam quasi, qui ratione voluptas."
+        notificationsContainer.insertBefore(div, notificationsObserveContainer)
+    }
+
+
+
+</script>
+
+
+
+<script> // sending text frames to the consumer
+
+    function getNextNotificationsPage(pageNumber) {
+        notificationsSocket.send(JSON.stringify({
+            'command': 'load_notifications',
+            'page_number': pageNumber,
+        }))
+    }
+
+
+</script>

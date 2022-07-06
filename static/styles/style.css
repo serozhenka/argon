@@ -301,3 +301,9 @@ body {
     }
 }
 
+#notifications-container {
+    width: 450px;
+    max-height: 350px;
+    overflow-y: scroll;
+}
+

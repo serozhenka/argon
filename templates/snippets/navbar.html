@@ -5,21 +5,27 @@
         <div class="collapse navbar-collapse justify-content-end" id="nav">
             <ul class="navbar-nav align-items-center">
 
-              <li class="nav-item mx-1"><a href="{% url 'post:feed' %}" class="nav-link custom-nav-link"><i class="fa fa-house fs-md-4 fs-5"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link"><i class="fa fa-mailbox fs-md-4 fs-5"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-md-4 fs-5"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-md-4 fs-5"></i></a></li>
-              <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-bell fs-md-4 fs-5"></i></a></li>
+                <li class="nav-item mx-1"><a href="{% url 'post:feed' %}" class="nav-link custom-nav-link"><i class="fa fa-house fs-md-4 fs-5"></i></a></li>
+                <li class="nav-item mx-1"><a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link"><i class="fa fa-mailbox fs-md-4 fs-5"></i></a></li>
+                <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-md-4 fs-5"></i></a></li>
+                <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-md-4 fs-5"></i></a></li>
 
-              <li class="nav-item mx-1 d-flex align-items-center">
-                  <div class="btn-group">
-                      <img class="img-fluid rounded-circle" src="{{ request.user.image.url }}" alt="user-image" style="width: 1.5rem" id="dropdownMenuButton1" data-bs-toggle="dropdown">
-                      <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="dropdownMenuButton1" style="width: 250px">
-                        <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:account' username=request.user.username %}"><i class="fa fa-user me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:logout' %}">Log Out</a></li>
-                      </ul>
-                  </div>
-              </li>
+                <li class="nav-item mx-1 dropstart">
+                    <div class="nav-link custom-nav-link" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-bell fs-md-4 fs-5"></i></div>
+                    <div id="notifications-container" class="dropdown-menu mt-5 custom-scrollbar">
+                        <div id="notifications-observe-container" class="py-3 h-100"></div>
+                    </div>
+                </li>
+
+                <li class="nav-item mx-1 d-flex align-items-center">
+                    <div class="btn-group">
+                        <img class="img-fluid rounded-circle" src="{{ request.user.image.url }}" alt="user-image" style="width: 1.5rem" id="dropdownMenuButton1" data-bs-toggle="dropdown">
+                        <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="dropdownMenuButton1" style="width: 250px">
+                            <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:account' username=request.user.username %}"><i class="fa fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:logout' %}">Log Out</a></li>
+                        </ul>
+                    </div>
+                </li>
             </ul>
         </div>
     </div>
