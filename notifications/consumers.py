@@ -54,7 +54,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         except ValueError:
             async_to_sync(self.handle_error)((ClientError(1000, "Page number is not an integer")))
 
-        qs = Notification.objects.filter(receiver=self.scope['user']).order_by('is_read', 'timestamp')
+        qs = Notification.objects.filter(receiver=self.scope['user']).order_by('is_read', '-timestamp')
         paginator = Paginator(qs, NOTIFICATIONS_PAGE_SIZE)
 
         if page_number <= paginator.num_pages:

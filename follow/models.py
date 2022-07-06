@@ -70,7 +70,7 @@ class Following(models.Model):
             sender=sender,
             receiver=receiver,
             action_name="follow",
-            message=f"{sender.username} started following you",
+            message=f"started following you",
             redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
             content_type=ContentType.objects.get_for_model(self),
         )
@@ -169,12 +169,13 @@ class FollowingRequest(models.Model):
         # clear previous requests
         Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
         Notification.objects.filter(sender=sender, receiver=receiver, action_name="accept_fr").delete()
+        Notification.objects.filter(sender=sender, receiver=receiver, action_name="declined_fr").delete()
 
         self.notifications.create(
             sender=sender,
             receiver=receiver,
             action_name="accept_fr",
-            message=f"{sender.username} accepted your following request",
+            message=f"accepted your following request",
             redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
             content_type=ContentType.objects.get_for_model(self),
         )
@@ -184,6 +185,7 @@ class FollowingRequest(models.Model):
 
         # clear previous requests
         Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
+        Notification.objects.filter(sender=sender, receiver=receiver, action_name="accept_fr").delete()
         Notification.objects.filter(sender=sender, receiver=receiver, action_name="decline_fr").delete()
 
         self.notifications.create(

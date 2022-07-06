@@ -24,7 +24,7 @@ def create_send_fr_notification(sender: FollowingRequest, instance: FollowingReq
             sender=instance.sender,
             receiver=instance.receiver,
             action_name="send_fr",
-            message=f"{instance.sender.username} send your following request",
+            message=f"send your following request",
             redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': instance.sender.username})}",
             content_type=ContentType.objects.get_for_model(instance),
         )

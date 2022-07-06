@@ -1,3 +1,5 @@
+{% load static %}
+
 <script>
 
     let ws_notifications_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% endif %}8000" + `/notifications/`
@@ -60,15 +62,103 @@
     function handleNotifications(notifications) {
         console.log(typeof notifications)
         notifications.forEach(function (notification) {
-            appendNotification(notification)
+            appendNotification(createNotificationElement(notification))
+            preLoadImage(`${notification.sender.image}`, `${notification.id}_sender_image`)
         })
     }
 
-    function appendNotification(notification) {
-        let div = document.createElement('div')
-        div.classList.add('p-3')
-        div.innerHTML = "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab commodi consequatur deleniti esse exercitationem illo iste maxime nostrum numquam, tempora tempore voluptatum! Amet incidunt officiis quam quasi, qui ratione voluptas."
-        notificationsContainer.insertBefore(div, notificationsObserveContainer)
+    function appendNotification(notificationElement) {
+        notificationsContainer.insertBefore(notificationElement, notificationsObserveContainer)
+    }
+
+
+    function createNotificationElement(notification) {
+        let element = document.createElement('div')
+        element.id = `${notification.id}_notification`
+        element.classList.add('d-flex', 'p-3', 'align-items-center')
+        element.href = notification.redirect_url
+        element.innerHTML = `
+            <div class="col-sm-1 col-2 me-2">
+                ${userImageLink(notification)}
+            </div>
+            <div class="col-sm-11 col-10">
+                ${createNotificationBody(notification)}
+            </div>
+        `
+        return element;
+    }
+
+    function createNotificationBody(notification) {
+        switch(notification.action_name) {
+            case "follow": return createFollowNotificationBody(notification);
+            case "send_fr": return createSendFRNotificationBody(notification);
+            case "accept_fr": return createAcceptDeclinedFRNotificationBody(notification);
+            case "decline_fr": return createAcceptDeclinedFRNotificationBody(notification);
+        }
+    }
+
+    function userTextLink(notification) {
+        return `
+            <a href="${notification.redirect_url}" class="text-dark text-decoration-none">${notification.sender.username}</a>
+        `
+    }
+
+    function userImageLink(notification) {
+        return `
+            <a href="${notification.redirect_url}" class="text-dark text-decoration-none">
+                <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" id="${notification.id}_sender_image">
+            </a>
+        `
+    }
+
+    function createFollowNotificationBody(notification) {
+        return `
+            <div>
+                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+            </div>
+        `
+    }
+
+    function createAcceptDeclinedFRNotificationBody(notification) {
+        return `
+            <div>
+                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+            </div>
+        `
+    }
+
+    function createSendFRNotificationBody(notification) {
+        return `
+            <div>
+                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                <div class="d-flex my-1">
+                    <button type="button" class="btn btn-primary btn-sm me-2 accept" onclick="followingRequestAction('accept-request', '${notification.sender.username}', '${notification.id}')">Accept</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm decline" onclick="followingRequestAction('decline-request', '${notification.sender.username}', '${notification.id}')">Decline</button>
+                </div>
+                <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+            </div>
+        `
+    }
+
+    function followingRequestAction(action, username, notification_id) {
+
+        if (!["accept-request", "decline-request"].includes(action)) { return }
+        if(!username || !notification_id) { return }
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: {
+                "action": action,
+                "csrfmiddlewaretoken": "{{ csrf_token }}",
+            },
+            url: "{% url 'follow:follow-action' username=123456789 %}".replace(123456789, username),
+            timeout: 5 * 1000,
+            success: function(data) {
+                if (data.response_result === "success") { document.getElementById(`${notification_id}_notification`)?.remove() }
+            }
+        })
     }
 
 

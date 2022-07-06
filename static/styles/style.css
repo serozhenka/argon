@@ -307,3 +307,18 @@ body {
     overflow-y: scroll;
 }
 
+.dropdown-menu {
+    right: 0!important;
+}
+
+@media (max-width: 576px) {
+    #notifications-container {
+        width: 350px;
+    }
+}
+
+@media (max-width: 400px) {
+    #notifications-container {
+        width: 300px;
+    }
+}

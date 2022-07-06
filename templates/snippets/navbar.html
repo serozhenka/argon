@@ -31,6 +31,10 @@
     </div>
 </nav>
 
+<script>
+    $('#notifications-container').on('click', function(e) { e.stopPropagation() })
+</script>
+
 {#<script>#}
 {##}
 {#    let ws_userOnlineStatusSocket_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% else %}8000{% endif %}" + `/user/online/`#}
