@@ -112,9 +112,10 @@ def post_like_page(request, post_id):
 
         if action == "like" and not post_like.is_liked:
             post_like.is_liked = True
+            post_like.save()
         elif action == "dislike" and post_like.is_liked:
             post_like.is_liked = False
-        post_like.save()
+            post_like.save()
 
         return JsonResponse({
             'response_result': 'success',

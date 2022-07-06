@@ -1,19 +1,19 @@
 <nav class="navbar navbar-expand sticky-top bg-light p-1" style="z-index: 999">
-    <div class="d-flex col-lg-6 col-md-8 col-10 mx-auto align-items-center">
+    <div class="d-flex col-lg-6 col-md-8 col-11 mx-auto align-items-center">
         <a href="{% url 'post:feed' %}" class="navbar-brand"><h2 class="mb-0 header-font">Argon</h2></a>
 
         <div class="collapse navbar-collapse justify-content-end" id="nav">
             <ul class="navbar-nav align-items-center">
 
-              <li class="nav-item mx-1"><a href="{% url 'post:feed' %}" class="nav-link custom-nav-link"><i class="fa fa-house fs-4"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link"><i class="fa fa-mailbox fs-4"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-4"></i></a></li>
-              <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-4"></i></a></li>
-              <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-bell fs-4"></i></a></li>
+              <li class="nav-item mx-1"><a href="{% url 'post:feed' %}" class="nav-link custom-nav-link"><i class="fa fa-house fs-md-4 fs-5"></i></a></li>
+              <li class="nav-item mx-1"><a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link"><i class="fa fa-mailbox fs-md-4 fs-5"></i></a></li>
+              <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-md-4 fs-5"></i></a></li>
+              <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-md-4 fs-5"></i></a></li>
+              <li class="nav-item mx-1"><a href="" class="nav-link custom-nav-link"><i class="fa fa-bell fs-md-4 fs-5"></i></a></li>
 
               <li class="nav-item mx-1 d-flex align-items-center">
                   <div class="btn-group">
-                      <img class="img-fluid rounded-circle" src="{{ request.user.image.url }}" alt="user-image" style="width: 2rem" id="dropdownMenuButton1" data-bs-toggle="dropdown">
+                      <img class="img-fluid rounded-circle" src="{{ request.user.image.url }}" alt="user-image" style="width: 1.5rem" id="dropdownMenuButton1" data-bs-toggle="dropdown">
                       <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="dropdownMenuButton1" style="width: 250px">
                         <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:account' username=request.user.username %}"><i class="fa fa-user me-2"></i>Profile</a></li>
                         <li><a class="dropdown-item px-4 py-2 fs-14px" href="{% url 'account:logout' %}">Log Out</a></li>

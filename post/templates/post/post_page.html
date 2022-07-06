@@ -9,7 +9,7 @@
                 <div class="row bg-light rounded box-shadow">
                     <div class="col-lg-7 col-12 p-0">
                         {% if post.post_images.all.count == 1 %}
-                            <div class="d-flex" style="max-height: 550px;">
+                            <div class="d-flex" style="max-height: 605px;">
                                 <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
                             </div>
                         {% else %}
@@ -21,7 +21,7 @@
                                 </div>
                                 <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
                                     {% for post_image in post.post_images.all %}
-                                        <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="max-height: 550px;">
+                                        <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="max-height: 605px;">
                                             <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
                                         </div>
                                     {% endfor %}
