@@ -168,9 +168,10 @@
               appendComments(data.results, `${post_id}`)
               if (!data.next) {
                 let observeContainer = document.getElementById(`${post_id}-observe-container`)
-                console.log(observeContainer)
-                postCommentsObserversDict[`${post_id}`].unobserve(observeContainer);
-                observeContainer.remove()
+                if (observeContainer) {
+                    postCommentsObserversDict[`${post_id}`].unobserve(observeContainer);
+                    observeContainer.remove()
+                }
                 delete postCommentsUrlDict[`${post_id}`]
               }
             })

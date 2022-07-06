@@ -9,8 +9,8 @@
                 <div class="row bg-light rounded box-shadow">
                     <div class="col-lg-7 col-12 p-0">
                         {% if post.post_images.all.count == 1 %}
-                            <div class="d-flex" style="max-height: 605px;">
-                                <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                            <div class="d-flex" style="height: 600px;">
+                                <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
                             </div>
                         {% else %}
                             <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
@@ -21,8 +21,8 @@
                                 </div>
                                 <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
                                     {% for post_image in post.post_images.all %}
-                                        <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="max-height: 605px;">
-                                            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                                        <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="height: 600px;">
+                                            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -30,7 +30,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-lg-5 col-12 d-flex flex-column p-0">
+                    <div class="col-lg-5 col-12 d-flex flex-column p-0" style="height: 600px">
                         <div class="d-flex align-items-center p-3" style="background-color: var(--light-gray-color);">
                             <div class="col-1 me-2">
                                 <a href="{% url 'account:account' username=post.user.username %}">
@@ -45,7 +45,7 @@
                             </div>
                         </div>
 
-                        <div class="d-flex flex-column flex-grow-1 post-comments-container" id="{{ post.id }}-post-comments-container" style="max-height: 350px">
+                        <div class="d-flex flex-column flex-grow-1 post-comments-container" id="{{ post.id }}-post-comments-container" style="max-height: 400px">
 
                             <div id="observe-container" class="d-block py-3"></div>
                         </div>
