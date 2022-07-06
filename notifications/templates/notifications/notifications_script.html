@@ -64,6 +64,7 @@
         notifications.forEach(function (notification) {
             appendNotification(createNotificationElement(notification))
             preLoadImage(`${notification.sender.image}`, `${notification.id}_sender_image`)
+            $(`#${notification.id}_post_image`).length ?  preLoadImage(`${notification.post.image}`, `${notification.id}_post_image`) : null;
         })
     }
 
@@ -94,18 +95,20 @@
             case "send_fr": return createSendFRNotificationBody(notification);
             case "accept_fr": return createAcceptDeclinedFRNotificationBody(notification);
             case "decline_fr": return createAcceptDeclinedFRNotificationBody(notification);
+            case "post_like": return createPostLikeNotificationBody(notification);
+            case "post_comment": return createPostCommentNotificationBody(notification);
         }
     }
 
     function userTextLink(notification) {
         return `
-            <a href="${notification.redirect_url}" class="text-dark text-decoration-none">${notification.sender.username}</a>
+            <a href="${notification.sender.url}" class="text-dark text-decoration-none">${notification.sender.username}</a>
         `
     }
 
     function userImageLink(notification) {
         return `
-            <a href="${notification.redirect_url}" class="text-dark text-decoration-none">
+            <a href="${notification.sender.url}" class="text-dark text-decoration-none">
                 <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" id="${notification.id}_sender_image">
             </a>
         `
@@ -138,6 +141,35 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm decline" onclick="followingRequestAction('decline-request', '${notification.sender.username}', '${notification.id}')">Decline</button>
                 </div>
                 <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+            </div>
+        `
+    }
+
+    function createPostLikeNotificationBody(notification) {
+        return `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                    <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+                </div>
+                <a href="${notification.redirect_url}" style="width: 50px; height: 50px">
+                    <img class="img-fluid w-100 h-100 border" src="{% static 'images/default.png' %}" id="${notification.id}_post_image" style="object-fit: cover">
+                </a>
+            </div>
+        `
+    }
+
+    function createPostCommentNotificationBody(notification) {
+        return `
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="col-9">
+                    <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                    <div class="fs-12px text-muted mb-1">"${notification.comment.body}"</div>
+                    <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
+                </div>
+                <a class="col-2" href="${notification.redirect_url}" style="width: 50px; height: 50px">
+                    <img class="img-fluid w-100 h-100 border" src="{% static 'images/default.png' %}" id="${notification.id}_post_image" style="object-fit: cover">
+                </a>
             </div>
         `
     }

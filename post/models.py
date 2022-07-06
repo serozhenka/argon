@@ -33,6 +33,11 @@ class Post(models.Model):
             return str(naturaltime(self.created))
         return f"{self.created.strftime('%d %b, %Y')}"
 
+    @property
+    def get_first_image_url(self):
+        first_image = self.post_images.order_by('id').first()
+        return first_image.image.url
+
 
 class PostImage(models.Model):
     """Like model to Post model."""

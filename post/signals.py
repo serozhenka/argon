@@ -20,7 +20,7 @@ def create_post_comment_notification(sender: Comment, instance: Comment, created
             sender=instance.user,
             receiver=instance.post.user,
             action_name="post_comment",
-            message=f"{instance.user.username} commented your post: {instance.description}",
+            message=f"commented your post",
             redirect_url=f"{settings.BASE_URL}{reverse('post:post-page', kwargs={'post_id': instance.post.id})}",
             content_type=ContentType.objects.get_for_model(instance),
         )
@@ -32,7 +32,7 @@ def create_post_like_notification(sender: PostLike, instance: PostLike, created,
             sender=instance.user,
             receiver=instance.post.user,
             action_name="post_like",
-            message=f"{instance.user.username} liked your post",
+            message=f"liked your post",
             redirect_url=f"{settings.BASE_URL}{reverse('post:post-page', kwargs={'post_id': instance.post.id})}",
             content_type=ContentType.objects.get_for_model(instance),
         )
