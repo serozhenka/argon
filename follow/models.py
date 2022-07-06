@@ -1,3 +1,5 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from datetime import datetime
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation, ContentType
@@ -7,8 +9,13 @@ from django.urls import reverse
 from django.utils import timezone
 from typing import Union, List
 
+from .utils import clear_fr_notifications, clear_following_notifications
+from notifications.utils import send_notification_to_channel_layer
 from notifications.models import Notification
 from users.models import Account
+
+channel_layer = get_channel_layer()
+
 
 class Following(models.Model):
     user: Account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -60,13 +67,15 @@ class Following(models.Model):
         if self.user in ou_followers_model.users_followers.all():
             ou_followers_model.users_followers.remove(self.user)
 
+        clear_following_notifications(sender=self.user, receiver=other_user)
+
     def create_following_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
         """Method to create notification when sender follows receiver."""
 
         # clear previous notifications
-        Notification.objects.filter(sender=sender, receiver=receiver, action_name="follow").delete()
+        notifications_to_delete_id_list = clear_following_notifications(sender=sender, receiver=receiver)
 
-        self.notifications.create(
+        notification = self.notifications.create(
             sender=sender,
             receiver=receiver,
             action_name="follow",
@@ -75,6 +84,7 @@ class Following(models.Model):
             content_type=ContentType.objects.get_for_model(self),
         )
 
+        send_notification_to_channel_layer(notification, notifications_to_delete_id_list)
 
 class Followers(models.Model):
     user: Account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -93,10 +103,6 @@ class Followers(models.Model):
 
     def is_follower(self, other_user) -> bool:
         return other_user in self.users_followers.all()
-
-    # def add_follower(self, user: settings.AUTH_USER_MODEL):
-    #     if user not in self.users_followers.all():
-    #         self.users_followers.add(user)
 
     def remove_follower(self, other_user: settings.AUTH_USER_MODEL):
         """
@@ -167,11 +173,9 @@ class FollowingRequest(models.Model):
         """Method to create notification when sender accepts receiver friend request."""
 
         # clear previous requests
-        Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
-        Notification.objects.filter(sender=sender, receiver=receiver, action_name="accept_fr").delete()
-        Notification.objects.filter(sender=sender, receiver=receiver, action_name="declined_fr").delete()
+        notifications_to_delete_id_list = clear_fr_notifications(sender=sender, receiver=receiver)
 
-        self.notifications.create(
+        notification = self.notifications.create(
             sender=sender,
             receiver=receiver,
             action_name="accept_fr",
@@ -180,22 +184,25 @@ class FollowingRequest(models.Model):
             content_type=ContentType.objects.get_for_model(self),
         )
 
+        send_notification_to_channel_layer(notification, notifications_to_delete_id_list)
+
     def create_declined_fr_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
         """Method to create notification when sender declines receiver friend request."""
 
         # clear previous requests
-        Notification.objects.filter(sender=receiver, receiver=sender, action_name="send_fr").delete()
-        Notification.objects.filter(sender=sender, receiver=receiver, action_name="accept_fr").delete()
-        Notification.objects.filter(sender=sender, receiver=receiver, action_name="decline_fr").delete()
+        notifications_to_delete_id_list = clear_fr_notifications(sender=sender, receiver=receiver)
 
-        self.notifications.create(
+        notification = self.notifications.create(
             sender=sender,
             receiver=receiver,
             action_name="decline_fr",
-            message=f"{sender.username} declined your following request",
+            message=f"declined your following request",
             redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': sender.username})}",
             content_type=ContentType.objects.get_for_model(self),
         )
+
+        send_notification_to_channel_layer(notification, notifications_to_delete_id_list)
+
 
 
 

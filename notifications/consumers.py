@@ -14,6 +14,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self) -> None:
         """Called when client instantiates a handshake."""
         await self.accept()
+        await self.channel_layer.group_add(f"notifications_{self.scope['user'].username}", self.channel_name)
 
     async def receive_json(self, content, **kwargs):
         """Called when client sends a text frame."""
@@ -32,6 +33,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code) -> None:
         """Called when client disconnects or connection is lost."""
+        await self.channel_layer.group_discard(f"notifications_{self.scope['user'].username}", self.channel_name)
         await self.close(code)
 
     async def send_notifications_payload(self, notifications, new_page_number):
@@ -39,6 +41,14 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             'msg_type': NotificationType.LOAD_NOTIFICATIONS,
             'notifications': notifications,
             'new_page_number': new_page_number,
+        })
+
+    async def notification_send_new(self, event):
+        print(event.get('notifications_to_delete_id_list'))
+        await self.send_json({
+            'msg_type': NotificationType.NEW_NOTIFICATION,
+            'notifications': event.get('notification'),
+            'notifications_to_delete_id_list': event.get('notifications_to_delete_id_list'),
         })
 
     @database_sync_to_async
@@ -54,7 +64,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         except ValueError:
             async_to_sync(self.handle_error)((ClientError(1000, "Page number is not an integer")))
 
-        qs = Notification.objects.filter(receiver=self.scope['user']).order_by('is_read', '-timestamp')
+        qs = Notification.objects.filter(receiver=self.scope['user']).exclude(content_type__model="chatroommessage").order_by('is_read', '-timestamp')
         paginator = Paginator(qs, NOTIFICATIONS_PAGE_SIZE)
 
         if page_number <= paginator.num_pages:

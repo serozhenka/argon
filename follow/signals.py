@@ -5,7 +5,9 @@ from django.contrib.contenttypes.fields import ContentType
 from django.urls import reverse
 
 from .models import FollowingRequest
+from .utils import clear_send_fr_notifications
 from notifications.models import Notification
+from notifications.utils import send_notification_to_channel_layer
 
 @receiver(pre_save, sender=FollowingRequest)
 def create_send_fr_notification(sender: FollowingRequest, instance: FollowingRequest, **kwargs):
@@ -18,9 +20,9 @@ def create_send_fr_notification(sender: FollowingRequest, instance: FollowingReq
 
     if to_send:
         # clear previous notifications
-        Notification.objects.filter(sender=instance.sender, receiver=instance.receiver, action_name="send_fr").delete()
+        notifications_to_delete_id_list = clear_send_fr_notifications(instance.sender, instance.receiver)
 
-        instance.notifications.create(
+        notification = instance.notifications.create(
             sender=instance.sender,
             receiver=instance.receiver,
             action_name="send_fr",
@@ -28,3 +30,5 @@ def create_send_fr_notification(sender: FollowingRequest, instance: FollowingReq
             redirect_url=f"{settings.BASE_URL}{reverse('account:account', kwargs={'username': instance.sender.username})}",
             content_type=ContentType.objects.get_for_model(instance),
         )
+
+        send_notification_to_channel_layer(notification, notifications_to_delete_id_list)

@@ -6,10 +6,11 @@
     let notificationsSocket = new WebSocket(ws_notifications_path)
     let notificationsPageNumber = 1;
     let notificationsContainer = document.getElementById("notifications-container")
+    let deletedNotificationsIdList = []
+    let notToQueryMore = []
 
     let notificationsObserveContainer = document.getElementById("notifications-observe-container")
     let notificationsObserver = createNotificationsIntersectionObserver(notificationsCallback)
-    notificationsObserver.observe(notificationsObserveContainer)
 
     setupNotificationsWebsocket()
 
@@ -17,6 +18,7 @@
 
         notificationsSocket.onopen = function(e) {
             console.log('notifications websocket opened')
+            notificationsObserver.observe(notificationsObserveContainer)
         }
 
         notificationsSocket.onmessage = function(e) {
@@ -25,11 +27,13 @@
 
             if (msg_type === "load_notifications") {
                 setNotificationsPageNumber(data.new_page_number)
-                handleNotifications(JSON.parse(data.notifications))
-                console.log(data.notifications)
+                handleNotifications(JSON.parse(data.notifications), false)
             } else if (msg_type === "pagination_exhausted") {
                 setNotificationsPageNumber(-1)
                 paginationExhausted()
+            } else if (msg_type === "new_notification") {
+                handleNotifications(JSON.parse(data.notifications), true)
+                handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
             }
 
         }
@@ -56,22 +60,36 @@
 
     function paginationExhausted() {
         notificationsObserver.unobserve(notificationsObserveContainer)
-        notificationsObserveContainer?.remove()
+        notificationsObserveContainer.remove()
     }
 
-    function handleNotifications(notifications) {
-        console.log(typeof notifications)
+    function handleDeletedNotificationsIdList(idList) {
+        deletedNotificationsIdList.push(...idList)
+        idList.forEach(function(id) {
+            document.getElementById(`${id}_notification`)?.remove()
+        })
+    }
+
+    function handleNotifications(notifications, isNew) {
         notifications.forEach(function (notification) {
-            appendNotification(createNotificationElement(notification))
+            if (deletedNotificationsIdList.includes(notification.id) || notToQueryMore.includes(notification.id)) { return }
+
+            let notificationElement = createNotificationElement(notification)
+            isNew ? appendNewNotification(notificationElement): appendOldNotification(notificationElement)
+            isNew ? notToQueryMore.push(notification.id) : null
+
             preLoadImage(`${notification.sender.image}`, `${notification.id}_sender_image`)
             $(`#${notification.id}_post_image`).length ?  preLoadImage(`${notification.post.image}`, `${notification.id}_post_image`) : null;
         })
     }
 
-    function appendNotification(notificationElement) {
+    function appendOldNotification(notificationElement) {
         notificationsContainer.insertBefore(notificationElement, notificationsObserveContainer)
     }
 
+    function appendNewNotification(notificationElement) {
+        notificationsContainer.insertBefore(notificationElement, notificationsContainer.firstChild)
+    }
 
     function createNotificationElement(notification) {
         let element = document.createElement('div')
