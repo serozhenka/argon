@@ -46,6 +46,17 @@ def send_room_empty_notification_to_channel_layer(username, other_username):
         'other_username': other_username,
     })
 
+# sending fr actions notifications to channel layers
+def send_fr_accept_notification_to_channel_layer(username):
+    async_to_sync(channel_layer.group_send)(f"notifications_{username}", {
+        'type': 'notification.accept_fr',
+    })
+
+def send_fr_decline_notification_to_channel_layer(username):
+    async_to_sync(channel_layer.group_send)(f"notifications_{username}", {
+        'type': 'notification.decline_fr',
+    })
+
 
 class NotificationsSerializer(Serializer):
     """Class to serialize all kinds of notifications."""

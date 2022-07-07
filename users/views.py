@@ -69,7 +69,7 @@ def logout_page(request):
 
 @login_required(login_url=reverse_lazy('account:login'))
 def account_page(request, username):
-    context = {}
+    context = {'page': 'account'}
     if request.method == "GET":
         try:
             account = Account.objects.get(username=username)

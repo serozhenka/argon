@@ -108,6 +108,17 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             'other_username': event.get('other_username'),
         })
 
+    # methods accept / decline fr notifications
+    async def notification_accept_fr(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.ACCEPT_FR,
+        })
+
+    async def notification_decline_fr(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.DECLINE_FR,
+        })
+
     @database_sync_to_async
     def get_notifications_by_page(self, page_number: Union[int, str]) -> Tuple[Optional[list], Optional[int]]:
         """

@@ -145,8 +145,47 @@
             return element
         }
 
+        async function getOrCreateChatRoomElement(other_username) {
+            let element = document.getElementById(chatRoomElementId(other_username))
+
+            if (!element) {
+                await fetchChatRoom(other_username)
+                .then(roomData => {
+                    roomData = roomData[0]
+                    chatRoomsContainer.appendChild(createChatRoomElement(roomData))
+                    preLoadImage(`${roomData.other_user.image}`, `${roomData.other_user.username}_profile_image`)
+                    chatRoomElementsNotToQueryMore.push(other_username)
+                })
+            }
+        }
+
         function removeChatRoomElement(other_username) {
             document.getElementById(chatRoomElementId(other_username))?.remove()
+        }
+
+        async function fetchChatRoom(username) {
+            return await fetch(chatRoomUrl.replace(123456789, username))
+                .then(response => response.json())
+        }
+
+        function changeChatRoomUserAndText(other_username, username, message) {
+            let chatRoomElementUser = document.getElementById(chatRoomElementUserId(other_username))
+            let chatRoomElementText = document.getElementById(chatRoomElementTextId(other_username))
+
+            if (!chatRoomElementUser || !chatRoomElementText) { return null }
+
+            username ? chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":" : null;
+            chatRoomElementText.innerHTML = getValidatedText(message)
+        }
+
+        function boldChatRoomElement(other_username) {
+            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
+            if (element) { element.classList.add('fw-bold') }
+        }
+
+        function unboldChatRoomElement(other_username) {
+            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
+            if (element) { element.classList.remove('fw-bold') }
         }
 
         // end of chat room elements functions
@@ -183,45 +222,18 @@
             return md.render(string);
         }
 
-        // endif
+        // end of syntax highlight functions
+
+        // functions to handle message notifications
 
         async function handleNewMessageNotification(notification) {
-                let other_username = notification.message.other_user.username
-                await getOrCreateChatRoomElement(other_username)
+            let other_username = notification.message.other_user.username
+            await getOrCreateChatRoomElement(other_username)
 
-                let chatRoomElement = document.getElementById(chatRoomElementId(other_username)) // moving chatRoomElement to the top of the div
-                chatRoomsContainer.insertBefore(chatRoomElement, chatRoomsContainer.firstElementChild)
+            let chatRoomElement = document.getElementById(chatRoomElementId(other_username)) // moving chatRoomElement to the top of the div
+            chatRoomsContainer.insertBefore(chatRoomElement, chatRoomsContainer.firstElementChild)
 
-                changeChatRoomUserAndText(other_username, notification.message.username , notification.message.body)
-            }
-
-        async function getOrCreateChatRoomElement(other_username) {
-            let element = document.getElementById(chatRoomElementId(other_username))
-
-            if (!element) {
-                await fetchChatRoom(other_username)
-                .then(roomData => {
-                    roomData = roomData[0]
-                    chatRoomsContainer.appendChild(createChatRoomElement(roomData))
-                    preLoadImage(`${roomData.other_user.image}`, `${roomData.other_user.username}_profile_image`)
-                    chatRoomElementsNotToQueryMore.push(other_username)
-                })
-            }
-        }
-
-        async function fetchChatRoom(username) {
-            return await fetch(chatRoomUrl.replace(123456789, username))
-                .then(response => response.json())
-        }
-
-        function changeChatRoomUserAndText(other_username, username, message) {
-            let chatRoomElementUser = document.getElementById(chatRoomElementUserId(other_username))
-            let chatRoomElementText = document.getElementById(chatRoomElementTextId(other_username))
-
-            if (!chatRoomElementUser || !chatRoomElementText) { return null }
-
-            username ? chatRoomElementUser.innerHTML = (username === "{{ request.user.username }}" ? "you" : username) + ":" : null;
-            chatRoomElementText.innerHTML = getValidatedText(message)
+            changeChatRoomUserAndText(other_username, notification.message.username , notification.message.body)
         }
 
         function updateMessagesNotificationsCount(count) {
@@ -231,15 +243,7 @@
             notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
         }
 
-        function boldChatRoomElement(other_username) {
-            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
-            if (element) { element.classList.add('fw-bold') }
-        }
-
-        function unboldChatRoomElement(other_username) {
-            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
-            if (element) { element.classList.remove('fw-bold') }
-        }
+        // end of functions to handle message notifications
 
 
         {% if room_id %}

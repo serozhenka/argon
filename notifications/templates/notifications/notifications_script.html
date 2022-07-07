@@ -72,6 +72,11 @@
                 }
             {% endif %}
 
+            {% if page == "account" %}
+                if (msg_type === "accept_fr") { changeFrActionButton('unfollow') }
+                else if (msg_type === "decline_fr") { changeFrActionButton('follow') }
+            {% endif %}
+
         }
 
         notificationsSocket.onclose = (e) => {console.log("Websocket disconnected")}

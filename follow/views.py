@@ -7,6 +7,10 @@ from django.urls import reverse_lazy
 
 from .models import Following, FollowingRequest
 from .utils import user_exists_and_is_not_request_user
+from notifications.utils import (
+    send_fr_accept_notification_to_channel_layer,
+    send_fr_decline_notification_to_channel_layer,
+)
 
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -47,10 +51,12 @@ def follow_general_view(request, username):
             elif action == "accept-request":
                 following_request = FollowingRequest.objects.get(sender=account, receiver=request.user)
                 following_request.accept()
+                send_fr_accept_notification_to_channel_layer(account.username)
 
             elif action == "decline-request":
                 following_request = FollowingRequest.objects.get(sender=account, receiver=request.user)
                 following_request.decline()
+                send_fr_decline_notification_to_channel_layer(account.username)
 
             else:
                 return HttpResponse(json.dumps({'response_result': 'error'}), content_type='application/json')

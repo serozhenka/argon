@@ -70,8 +70,7 @@
                                     Message
                                 </button>
 
-                                {% if account.is_public or not account.is_public %}
-
+                                <div id="fr-action-button-container">
                                     {% if is_following %}
                                         <button class="btn btn-outline-danger btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="generalFollowRequest('unfollow')">
                                             Unfollow
@@ -86,9 +85,8 @@
                                                 Follow {% if is_followed %}Back {% endif %}
                                             </button>
                                         {% endif %}
-
                                     {% endif %}
-                                {% endif %}
+                                </div>
                             </div>
                         {% endif %}
                     </div>
@@ -124,7 +122,9 @@
 
                 </div>
 
-                <div id="observe-container" class="d-block py-3"></div>
+                {% if is_following %}
+                    <div id="observe-container" class="d-block py-3"></div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -150,7 +150,7 @@
             }
         }
 
-        observer.observe(observeContainer)
+        {% if is_following %} observer.observe(observeContainer) {% endif %}
 
         function getNextPage() {
             fetch(url)
@@ -197,6 +197,22 @@
               else if (data.response_result === "error") { console.log(data) }
             }
           })
+        }
+
+        function changeFrActionButton(action) {
+            let container = document.getElementById('fr-action-button-container')
+            if (!container) { return null }
+            if (!['follow', 'unfollow'].includes(action)) { return null }
+
+            let button = document.createElement('button')
+            button.classList.add('btn', 'btm-sm', 'fs-14px', 'py-1', 'px-2', 'me-2', 'disable-focus')
+            button.classList.add(action === "unfollow" ? 'btn-outline-danger' : 'btn-primary')
+            button.type = "button"
+            button.onclick = function () { generalFollowRequest(action) }
+            button.innerHTML = action === "unfollow" ? "Unfollow" : "Follow {% if is_following %}Back{% endif %}"
+
+            container.innerHTML = ""
+            container.appendChild(button)
         }
 
     </script>
