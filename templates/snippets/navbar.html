@@ -6,7 +6,12 @@
             <ul class="navbar-nav align-items-center">
 
                 <li class="nav-item mx-1"><a href="{% url 'post:feed' %}" class="nav-link custom-nav-link"><i class="fa fa-house fs-md-4 fs-5"></i></a></li>
-                <li class="nav-item mx-1"><a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link"><i class="fa fa-mailbox fs-md-4 fs-5"></i></a></li>
+                <li class="nav-item mx-1">
+                    <a href="{% url 'chat:chat-general-page' %}" class="nav-link custom-nav-link position-relative">
+                        <i class="fa fa-mailbox fs-md-4 fs-5"></i>
+                        <div id="messages-notifications-count-badge" class="icon-badge position-absolute rounded-circle text-light top-0 end-0 fs-12px text-center">1</div>
+                    </a>
+                </li>
                 <li class="nav-item mx-1"><a href="{% url 'user-search' %}" class="nav-link custom-nav-link"><i class="fa fa-magnifying-glass fs-md-4 fs-5"></i></a></li>
                 <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-md-4 fs-5"></i></a></li>
 

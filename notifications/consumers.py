@@ -1,8 +1,9 @@
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from typing import Union, Optional, Tuple
+from django.db.models import Q
 from django.core.paginator import Paginator
+from typing import Union, Optional, Tuple
 
 from .constants import NotificationType, NOTIFICATIONS_PAGE_SIZE
 from .models import Notification
@@ -34,6 +35,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         elif command == "notifications_count":
             count = await self.get_unread_notifications_count()
             await self.notification_send_count(count)
+
+        elif command == "messages_notifications_count":
+            count = await self.get_unread_messages_notifications_count()
+            await self.messages_notification_send_count(count)
 
         elif command == "read_notification":
             notification_id = content.get('notification_id')
@@ -91,6 +96,12 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             'notifications': event.get('notification'),
         })
 
+    async def messages_notification_send_count(self, count):
+        await self.send_json({
+            'msg_type': NotificationType.MESSAGES_NOTIFICATIONS_COUNT,
+            'count': count,
+        })
+
     async def notification_room_empty(self, event):
         await self.send_json({
             'msg_type': NotificationType.ROOM_EMPTY,
@@ -128,6 +139,15 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_unread_notifications_count(self) -> int:
         return Notification.objects.filter(receiver=self.scope['user'], is_read=False).exclude(content_type__model="chatroommessage").count()
+
+    @database_sync_to_async
+    def get_unread_messages_notifications_count(self) -> int:
+        return Notification.objects.filter(
+            ~Q(sender=self.scope['user']),
+            receiver=self.scope['user'],
+            content_type__model="chatroommessage",
+            is_read=False
+        ).count()
 
     @database_sync_to_async
     def set_notification_as_read(self, notification_id) -> Optional[Union[str, int]]:

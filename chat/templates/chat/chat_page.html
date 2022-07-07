@@ -223,6 +223,13 @@
             chatRoomElementText.innerHTML = getValidatedText(message)
         }
 
+        function updateMessagesNotificationsCount(count) {
+            let notificationsCountBadge = $(`#messages-notifications-count-badge`)
+            if (!notificationsCountBadge.length) { return null }
+            notificationsCountBadge.html(count)
+            notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
+        }
+
 
         {% if room_id %}
 

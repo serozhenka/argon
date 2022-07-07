@@ -11,6 +11,7 @@ class NotificationType(str, Enum):
 
     NEW_CHAT_MESSAGE_NOTIFICATION = "new_chat_message_notification"
     EDIT_CHAT_MESSAGE_NOTIFICATION = "edit_chat_message_notification"
+    MESSAGES_NOTIFICATIONS_COUNT = "messages_notifications_count"
 
     ROOM_EMPTY = "room_empty"
 

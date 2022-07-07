@@ -21,6 +21,7 @@
             console.log('notifications websocket opened')
             notificationsObserver.observe(notificationsObserveContainer)
             getNotificationsCount()
+            getMessagesNotificationsCount()
         }
 
         notificationsSocket.onmessage = function(e) {
@@ -55,6 +56,8 @@
                     changeChatRoomUserAndText(notification.message.other_user.username, notification.message.username , notification.message.body)
                 } else if (msg_type === "room_empty") {
                     removeChatRoomElement(data.other_username)
+                } else if (msg_type === "messages_notifications_count") {
+                    updateMessagesNotificationsCount(data.count)
                 }
             {% endif %}
 
@@ -285,6 +288,12 @@
         notificationsSocket.send(JSON.stringify({
             'command': 'read_notification',
             'notification_id': notification_id,
+        }))
+    }
+
+    function getMessagesNotificationsCount() {
+        notificationsSocket.send(JSON.stringify({
+            'command': 'messages_notifications_count',
         }))
     }
 
