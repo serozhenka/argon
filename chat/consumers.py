@@ -10,6 +10,7 @@ from .constants import MsgType, CHAT_ROOM_MESSAGE_PAGE_SIZE
 from .exceptions import ClientError
 from .models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
 from .utils import calculate_timestamp, ChatRoomMessageSerializer
+from notifications.models import Notification
 from users.models import Account
 
 
@@ -91,10 +92,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             message_id = content.get('message_id')
 
             if self.room and room_id == str(self.room.id) and message_id:
-                if marked_message_id := await self.set_message_as_read(message_id):
+                marked_message_id, is_last_message = await self.set_message_as_read(message_id)
+                if marked_message_id:
 
                     await self.channel_layer.group_send(self.group_name, {
                         'type': 'chat.message.read',
+                        'is_last_message': is_last_message,
+                        'other_username': self.room.other_user(self.scope['user']).username,
                         "message_id": marked_message_id,
                     })
 
@@ -123,6 +127,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         await self.send_json({
             'msg_type': MsgType.SET_MESSAGE_READ,
+            'is_last_message': event.get('is_last_message'),
+            'other_username': event.get('other_username'),
             "message_id": event.get('message_id'),
         })
 
@@ -302,7 +308,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return None
 
     @database_sync_to_async
-    def set_message_as_read(self, message_id) -> Optional[str]:
+    def set_message_as_read(self, message_id) -> Tuple[Optional[str], Optional[bool]]:
         """
             Method to set message as read if user requesting method
             is not current user (user can not mark themselves message as read).
@@ -312,14 +318,30 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         try:
             message = ChatRoomMessage.objects.get(id=message_id)
         except ChatRoomMessage.DoesNotExist:
-            return None
+            return None, None
 
         if message.user.username != self.scope['user'].username:
             message.is_read = True
             message.save()
-            return message_id
 
-        return None
+            is_last_message = message.room.last_message == message
+
+            if is_last_message:  # update notification
+                try:
+                    notification = Notification.objects.get(
+                        sender=message.room.other_user(self.scope['user']),
+                        receiver=self.scope['user'],
+                        content_type__model='chatroommessage',
+                        is_read=False
+                    )
+                    notification.is_read = True
+                    notification.save()
+                except Notification.DoesNotExist:
+                    pass
+
+            return message_id, is_last_message
+
+        return None, None
 
     async def display_loading_spinner(self, display):
         await self.send_json({

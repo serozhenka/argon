@@ -51,9 +51,20 @@
                 if (msg_type === "new_chat_message_notification") {
                     let notification = JSON.parse(data.notifications)[0]
                     handleNewMessageNotification(notification)
+
+                    if (String(notification.room.id) !== "{{ room_id }}") {
+                        boldChatRoomElement(notification.sender.username)
+                        getMessagesNotificationsCount()
+                    }
                 } else if (msg_type === "edit_chat_message_notification") {
                     let notification = JSON.parse(data.notifications)[0]
                     changeChatRoomUserAndText(notification.message.other_user.username, notification.message.username , notification.message.body)
+
+                    if (notification.last_message.username !== "{{ request.user.username }}") {
+                        if (notification.last_message.is_read) { unboldChatRoomElement(notification.last_message.username) }
+                        else { boldChatRoomElement(notification.last_message.username) }
+                    }
+
                 } else if (msg_type === "room_empty") {
                     removeChatRoomElement(data.other_username)
                 } else if (msg_type === "messages_notifications_count") {

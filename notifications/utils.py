@@ -91,6 +91,18 @@ class NotificationsSerializer(Serializer):
                         'username': other_user.username,
                         'image': other_user.image.url,
                     }
+                },
+                'room': {
+                    'id': obj.content_object.room.id,
+                }
+            })
+
+        if obj.action_name == 'chat_message_edit':
+            last_message = obj.content_object.room.last_message
+            dump_object.update({
+                'last_message': {
+                    'username': last_message.user.username,
+                    'is_read': last_message.is_read,
                 }
             })
 

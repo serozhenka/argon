@@ -118,6 +118,7 @@
             let element = document.createElement('a')
             element.id = chatRoomElementId(room.other_user.username)
             element.classList.add('d-flex', 'align-items-center', 'p-3', 'hover-block', 'text-decoration-none', 'text-dark')
+            if (room.notification?.is_read === false) { element.classList.add('fw-bold') }
             element.href = "{% url 'chat:chat-page' username=123456789 %}".replace(123456789, room.other_user.username)
 
             element.innerHTML = `
@@ -230,6 +231,16 @@
             notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
         }
 
+        function boldChatRoomElement(other_username) {
+            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
+            if (element) { element.classList.add('fw-bold') }
+        }
+
+        function unboldChatRoomElement(other_username) {
+            let element = document.getElementById(`${chatRoomElementId(other_username)}`)
+            if (element) { element.classList.remove('fw-bold') }
+        }
+
 
         {% if room_id %}
 
@@ -299,7 +310,13 @@
                         case "load_messages": pageNumber = data.new_page_number; loadMessages(data.messages); break;
                         case "delete_message": removeMessageElement(data.message_id); break;
                         case "edit_message": editMessageElement(data.message_id, data.text); break;
-                        case "set_message_read": markMessageAsRead(data.message_id); break;
+                        case "set_message_read":
+                            markMessageAsRead(data.message_id);
+                            if (data.is_last_message) {
+                                getMessagesNotificationsCount()
+                                unboldChatRoomElement(data.other_username)
+                            }
+                            break;
 
                         case "error": handleError(data.code, data.message); break;
 

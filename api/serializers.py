@@ -1,8 +1,10 @@
+from django.db.models import Q
 from rest_framework import serializers
 
 from chat.models import ChatRoom, ChatRoomMessage, ChatRoomMessageBody
-from users.models import Account
+from notifications.models import Notification
 from post.models import Post, PostImage, PostLike, Comment, CommentLike
+from users.models import Account
 
 class AccountSerializer(serializers.ModelSerializer):
     is_following_by_request_user = serializers.SerializerMethodField()
@@ -79,12 +81,25 @@ class ChatRoomMessageSerializer(serializers.ModelSerializer):
 
 class ChatRoomSerializer(serializers.ModelSerializer):
     other_user = serializers.SerializerMethodField()
+    notification = serializers.SerializerMethodField()
     last_message = ChatRoomMessageSerializer()
 
     class Meta:
         model = ChatRoom
-        fields = ['other_user', 'last_message']
+        fields = ['other_user', 'last_message', 'notification']
 
     def get_other_user(self, obj):
         other_user = obj.other_user(self.context['request'].user)
         return SimpleAccountSerializer(other_user).data
+
+    def get_notification(self, obj):
+        me = self.context['request'].user
+        other_user = obj.other_user(me)
+        notification = Notification.objects.filter(sender=other_user, receiver=me, content_type__model='chatroommessage').first()
+        return NotificationSerializer(notification).data
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Notification
+        fields = ['receiver', 'sender', 'is_read', 'timestamp', 'id']

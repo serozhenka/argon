@@ -64,6 +64,7 @@ def set_chat_room_last_message_and_create_notification_if_last_message_deleted(s
                     sender=instance.user,
                     receiver=user,
                     action_name="chat_message_edit",
+                    is_read=instance.room.last_message.is_read,
                     content_type=ContentType.objects.get_for_model(instance.room.last_message),
                 )
 
