@@ -11,7 +11,10 @@
                 <li class="nav-item mx-1"><a href="{% url 'post:post-add' %}" class="nav-link custom-nav-link"><i class="fa fa-square-plus fs-md-4 fs-5"></i></a></li>
 
                 <li class="nav-item mx-1 dropstart">
-                    <div class="nav-link custom-nav-link" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-bell fs-md-4 fs-5"></i></div>
+                    <div class="nav-link custom-nav-link position-relative" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa fa-bell fs-md-4 fs-5"></i>
+                        <div id="notifications-count-badge" class="icon-badge position-absolute rounded-circle text-light top-0 end-0 fs-12px text-center">1</div>
+                    </div>
                     <div id="notifications-container" class="dropdown-menu mt-5 custom-scrollbar">
                         <div id="notifications-observe-container" class="py-3 h-100"></div>
                     </div>

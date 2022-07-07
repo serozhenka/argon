@@ -37,6 +37,7 @@ class NotificationsSerializer(Serializer):
             'message': obj.message,
             'redirect_url': str(obj.redirect_url),
             'natural_timestamp': str(naturaltime(obj.timestamp)),
+            'is_read': obj.is_read,
             'id': str(obj.id),
             'content_type': str(obj.content_type),
         }

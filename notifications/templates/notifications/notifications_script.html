@@ -11,6 +11,7 @@
 
     let notificationsObserveContainer = document.getElementById("notifications-observe-container")
     let notificationsObserver = createNotificationsIntersectionObserver(notificationsCallback)
+    let notificationReadObserverDict = {}
 
     setupNotificationsWebsocket()
 
@@ -19,6 +20,7 @@
         notificationsSocket.onopen = function(e) {
             console.log('notifications websocket opened')
             notificationsObserver.observe(notificationsObserveContainer)
+            getNotificationsCount()
         }
 
         notificationsSocket.onmessage = function(e) {
@@ -36,6 +38,10 @@
                 handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
             } else if (msg_type === "delete_notification") {
                 handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
+            } else if (msg_type === "notifications_count") {
+                updateNotificationsCount(data.count)
+            } else if (msg_type === "read_notification") {
+                getNotificationsCount()
             }
 
         }
@@ -55,6 +61,20 @@
     function notificationsCallback(entries) {
         for (const entry of entries) {
           if (entry.isIntersecting) { getNextNotificationsPage(notificationsPageNumber) }
+        }
+    }
+
+    function notificationsReadCallback(entries) {
+        for (const entry of entries) {
+            if (entry.isIntersecting) {
+                let notification_id = entry.target.notification_id
+                setNotificationRead(notification_id)
+
+                let notificationContainer = document.getElementById(`${notification_id}_notification`)
+                if (notificationReadObserverDict[`${notification_id}`] && notificationContainer) {
+                    notificationReadObserverDict[`${notification_id}`].unobserve(notificationContainer)
+                }
+            }
         }
     }
 
@@ -80,6 +100,12 @@
             isNew ? appendNewNotification(notificationElement): appendOldNotification(notificationElement)
             isNew ? notToQueryMore.push(notification.id) : null
 
+            if (!notification.is_read) {
+                let notificationReadObserver = createNotificationsIntersectionObserver(notificationsReadCallback)
+                notificationReadObserver.observe(notificationElement)
+                notificationReadObserverDict[`${notification.id}`] = notificationReadObserver
+            }
+
             preLoadImage(`${notification.sender.image}`, `${notification.id}_sender_image`)
             $(`#${notification.id}_post_image`).length ?  preLoadImage(`${notification.post.image}`, `${notification.id}_post_image`) : null;
         })
@@ -96,6 +122,7 @@
     function createNotificationElement(notification) {
         let element = document.createElement('div')
         element.id = `${notification.id}_notification`
+        element.notification_id = `${notification.id}`
         element.classList.add('d-flex', 'p-3', 'align-items-center')
         element.href = notification.redirect_url
         element.innerHTML = `
@@ -213,6 +240,12 @@
         })
     }
 
+    function updateNotificationsCount(count) {
+        let notificationsCountBadge = $(`#notifications-count-badge`)
+        if (!notificationsCountBadge.length) { return null }
+        notificationsCountBadge.html(count)
+        notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
+    }
 
 
 </script>
@@ -228,5 +261,17 @@
         }))
     }
 
+    function getNotificationsCount() {
+        notificationsSocket.send(JSON.stringify({
+            'command': 'notifications_count',
+        }))
+    }
+
+    function setNotificationRead(notification_id) {
+        notificationsSocket.send(JSON.stringify({
+            'command': 'read_notification',
+            'notification_id': notification_id,
+        }))
+    }
 
 </script>

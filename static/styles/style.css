@@ -8,6 +8,7 @@
     --link-color: #19a5e8;
     --hover-link-color: #0f6a94;
     --online-icon-color: #40b340;
+    --badge-color: #FF3041FF;
 }
 
 body {
@@ -322,3 +323,21 @@ body {
         width: 300px;
     }
 }
+
+.icon-badge {
+    background-color: var(--badge-color);
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+
+    /*transition: opacity 2s ease-in;*/
+}
+
+/*.loaded {*/
+/*    opacity: 1;*/
+/*}*/
+
+/*@keyframes opacity {*/
+/*    from {opacity: 0}*/
+/*    to {opacity: 1}*/
+/*}*/
