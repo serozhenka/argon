@@ -10,6 +10,7 @@ from .models import Notification
 
 channel_layer = get_channel_layer()
 
+# sending general notifications to channel layer
 def send_notification_to_channel_layer(notification, notifications_to_delete_id_list):
     async_to_sync(channel_layer.group_send)(f"notifications_{notification.receiver.username}", {
         'type': 'notification.send_new',
@@ -24,7 +25,30 @@ def send_notification_delete_to_channel_layer(username, notifications_to_delete_
     })
 
 
+# sending chat room message notifications to channel layer
+def send_chat_message_notification_to_channel_layer(notification):
+    async_to_sync(channel_layer.group_send)(f"notifications_{notification.receiver.username}", {
+        'type': 'notification.new_chat_message',
+        'notification': NotificationsSerializer().serialize([notification]),
+    })
+
+
+def send_chat_message_edit_notification_to_channel_layer(notification):
+    async_to_sync(channel_layer.group_send)(f"notifications_{notification.receiver.username}", {
+        'type': 'notification.edit_chat_message',
+        'notification': NotificationsSerializer().serialize([notification]),
+    })
+
+
+def send_room_empty_notification_to_channel_layer(username, other_username):
+    async_to_sync(channel_layer.group_send)(f"notifications_{username}", {
+        'type': 'notification.room_empty',
+        'other_username': other_username,
+    })
+
+
 class NotificationsSerializer(Serializer):
+    """Class to serialize all kinds of notifications."""
 
     def get_dump_object(self, obj: Notification) -> dict:
         dump_object = {
@@ -53,6 +77,20 @@ class NotificationsSerializer(Serializer):
             dump_object.update({
                 'comment': {
                     'body': obj.content_object.description,
+                }
+            })
+
+        if obj.content_type.model == 'chatroommessage':
+            other_user = obj.content_object.room.other_user(obj.receiver)
+
+            dump_object.update({
+                'message': {
+                    'body': obj.content_object.body.text,
+                    'username': obj.content_object.user.username,
+                    'other_user': {
+                        'username': other_user.username,
+                        'image': other_user.image.url,
+                    }
                 }
             })
 

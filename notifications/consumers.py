@@ -45,6 +45,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_discard(f"notifications_{self.scope['user'].username}", self.channel_name)
         await self.close(code)
 
+    # methods to handle general notifications
     async def send_notifications_payload(self, notifications, new_page_number):
         await self.send_json({
             'msg_type': NotificationType.LOAD_NOTIFICATIONS,
@@ -75,6 +76,25 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'msg_type': NotificationType.READ_NOTIFICATION,
             'notification_id': notification_id,
+        })
+
+    # methods to handle chat room message notifications
+    async def notification_new_chat_message(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.NEW_CHAT_MESSAGE_NOTIFICATION,
+            'notifications': event.get('notification'),
+        })
+
+    async def notification_edit_chat_message(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.EDIT_CHAT_MESSAGE_NOTIFICATION,
+            'notifications': event.get('notification'),
+        })
+
+    async def notification_room_empty(self, event):
+        await self.send_json({
+            'msg_type': NotificationType.ROOM_EMPTY,
+            'other_username': event.get('other_username'),
         })
 
     @database_sync_to_async

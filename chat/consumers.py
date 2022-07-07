@@ -53,28 +53,23 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         elif command == "load_messages":
             page_number = content.get('page_number')
             await self.display_loading_spinner(True)
+
             if self.room and room_id == str(self.room.id) and page_number:
                 messages, new_page_number = await self.get_chat_room_messages(page_number)
                 if messages:
                     await self.load_messages(messages, new_page_number)
                 else:
                     await self.pagination_exhausted()
+
             await self.display_loading_spinner(False)
 
         elif command == "delete_message":
             message_id = content.get('message_id')
 
             if self.room and room_id == str(self.room.id) and message_id:
-                deleted_msg_id, is_last_message = await self.delete_chat_room_message(message_id)
-                if deleted_msg_id:
-                    other_username = self.room.other_user(self.scope['user']).username
-                    last_message = await self.get_chat_room_last_message(room_id)
-
+                if deleted_msg_id := await self.delete_chat_room_message(message_id):
                     await self.channel_layer.group_send(self.group_name, {
                         'type': 'chat.message.delete',
-                        'is_last_message': is_last_message,
-                        'last_message': last_message,
-                        'other_username': other_username,
                         "message_id": deleted_msg_id,
                     })
 
@@ -83,14 +78,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             text = content.get('text')
 
             if self.room and room_id == str(self.room.id) and message_id and text:
-                edited_msg_id, is_last_message = await self.edit_chat_room_message(message_id, text)
+                edited_msg_id = await self.edit_chat_room_message(message_id, text)
                 if edited_msg_id:
 
                     await self.channel_layer.group_send(self.group_name, {
                         'type': 'chat.message.edit',
                         'text': text,
-                        'is_last_message': is_last_message,
-                        'other_username': self.room.other_user(self.scope['user']).username,
                         "message_id": edited_msg_id,
                     })
 
@@ -110,7 +103,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.leave_room(str(self.room.id)) if self.room else None
         await self.close(code)
 
-    # Functions sending text frame to the client
+    # Methods sending text frame to the client
 
     async def chat_message(self, event):
         """Method to send message to the group."""
@@ -138,9 +131,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         await self.send_json({
             'msg_type': MsgType.DELETE_MESSAGE,
-            'is_last_message': event.get('is_last_message'),
-            'last_message': event.get('last_message'),
-            'other_username': event.get('other_username'),
             "message_id": event.get('message_id'),
         })
 
@@ -150,8 +140,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'msg_type': MsgType.EDIT_MESSAGE,
             'text': event.get('text'),
-            'is_last_message': event.get('is_last_message'),
-            'other_username': event.get('other_username'),
             "message_id": event.get('message_id'),
         })
 
@@ -277,47 +265,41 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({'msg_type': MsgType.PAGINATION_EXHAUSTED})
 
     @database_sync_to_async
-    def delete_chat_room_message(self, message_id) -> Tuple[Optional[str], Optional[bool]]:
+    def delete_chat_room_message(self, message_id) -> Optional[str]:
         """
             Method to delete chat room message.
-            If found and message user is current user returns Tuple(message id, is_last_message), \
-            else Tuple(None, Optional[bool]).
+            If found and message user is current user returns message id, else None
         """
 
         try:
             msg = ChatRoomMessage.objects.get(id=message_id)
         except ChatRoomMessage.DoesNotExist:
-            return None, None
-
-        is_last_message = msg.room.last_message == msg
+            return None
 
         if msg.user.username == self.scope['user'].username:
             msg.delete()
-            return message_id, is_last_message
+            return message_id
 
-        return None, is_last_message
+        return None
 
     @database_sync_to_async
-    def edit_chat_room_message(self, message_id, text) -> Tuple[Optional[str], Optional[bool]]:
+    def edit_chat_room_message(self, message_id, text) -> Optional[str]:
         """
             Method to edit chat room message.
-            If found and message user is current user returns Tuple(message id, is_last_message),
-            else Tuple(None, Optional[bool]).
+            If found and message user is current user returns message id, else None.
         """
 
         try:
             msg = ChatRoomMessage.objects.get(id=message_id)
         except ChatRoomMessage.DoesNotExist:
-            return None, None
-
-        is_last_message = msg.room.last_message == msg
+            return None
 
         if msg.user.username == self.scope['user'].username:
             msg.body.text = text
             msg.body.save()
-            return message_id, is_last_message
+            return message_id
 
-        return None, is_last_message
+        return None
 
     @database_sync_to_async
     def set_message_as_read(self, message_id) -> Optional[str]:
@@ -337,18 +319,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             message.save()
             return message_id
 
-        return None
-
-    @database_sync_to_async
-    def get_chat_room_last_message(self, room_id):
-        """
-        Method to get last message, serialize it if exists and return it.
-        If message does not exist returns None.
-        """
-        room = ChatRoom.objects.get(id=room_id)
-        if room.last_message:
-            serializer = ChatRoomMessageSerializer()
-            return serializer.serialize([room.last_message])
         return None
 
     async def display_loading_spinner(self, display):
@@ -442,10 +412,3 @@ class OnlineUserStatusConsumer(AsyncJsonWebsocketConsumer):
             usernames.append(username1 if username1 != user.username else username2)
 
         return usernames
-
-
-
-
-
-
-

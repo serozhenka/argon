@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.core.serializers.json import Serializer
 
 from .models import ChatRoomMessage
+from notifications.models import Notification
 
 def calculate_timestamp(timestamp):
     ts = timestamp.strftime("%H:%M, %b %e")
@@ -16,3 +18,12 @@ class ChatRoomMessageSerializer(Serializer):
             'is_read': obj.is_read,
             'id': str(obj.id),
         }
+
+def clear_previous_message_notifications(sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
+    for receive_user in [sender, receiver]:
+        notifications_to_delete = Notification.objects.filter(
+            sender=sender,
+            receiver=receive_user,
+            action_name__in=["chat_message_new", "chat_message_edit"],
+        )
+        notifications_to_delete.delete()

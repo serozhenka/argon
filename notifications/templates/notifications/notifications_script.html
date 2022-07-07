@@ -46,6 +46,18 @@
                 getNotificationsCount()
             }
 
+            {% if page == "chat" %}
+                if (msg_type === "new_chat_message_notification") {
+                    let notification = JSON.parse(data.notifications)[0]
+                    handleNewMessageNotification(notification)
+                } else if (msg_type === "edit_chat_message_notification") {
+                    let notification = JSON.parse(data.notifications)[0]
+                    changeChatRoomUserAndText(notification.message.other_user.username, notification.message.username , notification.message.body)
+                } else if (msg_type === "room_empty") {
+                    removeChatRoomElement(data.other_username)
+                }
+            {% endif %}
+
         }
 
         notificationsSocket.onclose = (e) => {console.log("Websocket disconnected")}
