@@ -36,8 +36,10 @@
             } else if (msg_type === "new_notification") {
                 handleNotifications(JSON.parse(data.notifications), true)
                 handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
+                getNotificationsCount()
             } else if (msg_type === "delete_notification") {
                 handleDeletedNotificationsIdList(data.notifications_to_delete_id_list)
+                getNotificationsCount()
             } else if (msg_type === "notifications_count") {
                 updateNotificationsCount(data.count)
             } else if (msg_type === "read_notification") {

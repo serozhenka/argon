@@ -172,6 +172,11 @@ class FollowingRequest(models.Model):
             self.is_active = False
             self.save()
 
+        send_notification_delete_to_channel_layer(
+            self.receiver.username,
+            clear_fr_notifications(sender=self.receiver, receiver=self.sender)
+        )
+
     def create_accept_fr_notification(self, sender: settings.AUTH_USER_MODEL, receiver: settings.AUTH_USER_MODEL):
         """Method to create notification when sender accepts receiver friend request."""
 
