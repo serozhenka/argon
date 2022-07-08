@@ -2,7 +2,7 @@ from django.contrib.contenttypes.fields import ContentType
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
-from .models import ChatRoomMessage, ChatRoom, ChatRoomMessageBody
+from .models import ChatRoomMessage, ChatRoomMessageBody
 from .utils import clear_previous_message_notifications
 from notifications.utils import (
     send_chat_message_notification_to_channel_layer,

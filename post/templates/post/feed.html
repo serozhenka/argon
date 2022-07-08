@@ -81,7 +81,7 @@
                 div.innerHTML += `<img src="{% static 'images/gray-bg.png' %}" class="card-img-top" id="${post.id}_image_0" style="border-radius: 0!important">`
             } else {
                 let carouselButtons = post.post_images.map((item, i) => {
-                    return `<button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`
+                    return `<button type="button" data-bs-target="#carouselExampleIndicators_${post.id}" data-bs-slide-to="${i}" class="${i === 0 ? "active": ""}"></button>`
                 }).join("")
 
                 let carouselImages = post.post_images.map((item, i) => {
@@ -92,11 +92,11 @@
 
 
                 div.innerHTML += `
-                    <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
-                        <div class="carousel-indicators" id="carouselButtonsIndicators">
+                    <div id="carouselExampleIndicators_${post.id}" class="carousel slide rounded box-shadow" data-bs-interval="false">
+                        <div class="carousel-indicators" id="carouselButtonsIndicators_${post.id}">
                             ${carouselButtons}
                         </div>
-                        <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+                        <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators_${post.id}" style="background-color: var(--semi-gray-color);">
                             ${carouselImages}
                         </div>
                   </div>

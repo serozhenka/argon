@@ -122,7 +122,7 @@
 
                 </div>
 
-                {% if is_following %}
+                {% if is_following or request.user == account %}
                     <div id="observe-container" class="d-block py-3"></div>
                 {% endif %}
             </div>
@@ -150,7 +150,7 @@
             }
         }
 
-        {% if is_following %} observer.observe(observeContainer) {% endif %}
+        {% if is_following or request.user == account %} observer.observe(observeContainer) {% endif %}
 
         function getNextPage() {
             fetch(url)
