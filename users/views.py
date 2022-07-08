@@ -216,7 +216,6 @@ def crop_image(request, username):
                 os.rmdir(f"{settings.TEMP}/{str(account.pk)}")
 
         except Exception as e:
-            print(e)
             payload['result'] = 'error'
             payload['exception'] = str(e)
 

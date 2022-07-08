@@ -44,9 +44,21 @@
             fetch(url)
             .then(response => response.json())
             .then(data => {
-              url = data.next
-              appendPosts(data.results)
-              if (!url) { observer.unobserve(observeContainer) }
+                if (!data.results.length) {
+                    let afterQuestionMark = url.split("?")[1]
+                    if (afterQuestionMark === `limit=${limit}&offset=0`) {
+                        let noFollowings = document.createElement('a')
+                        noFollowings.href = "{% url 'user-search' %}"
+                        noFollowings.innerHTML = `<img class="d-block mx-auto logo-hover mt-5" src="{% static 'images/logo.png' %}" style="opacity: 0.3" />`
+                        postContainer.insertAdjacentElement('afterend', noFollowings)
+                    }
+                }
+                url = data.next
+                appendPosts(data.results)
+                if (!url) {
+                    observer.unobserve(observeContainer)
+                    observeContainer?.remove()
+                }
             })
         }
 
@@ -72,7 +84,6 @@
                             <li><a href="${post_href}" class="link text-dark d-block p-3 py-2" target="blank">Go to post</a></li>
                           </ul>
                        </div>
-                       {#<i class="fa-light fa-ellipsis-vertical fs-5 me-2"></i>#}
                    </div>
                </div>
             `

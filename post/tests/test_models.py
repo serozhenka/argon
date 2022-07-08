@@ -13,7 +13,7 @@ class TestPostModel(TestCase):
 
     def setUp(self) -> None:
         self.post = baker.make(Post)
-        self.post_image = PostImage.objects.create(post=self.post)
+        self.post_image = PostImage.objects.create(post=self.post, image=None)
         self.comment = baker.make(Comment, post=self.post)
 
     def test_post_created(self):
@@ -22,11 +22,6 @@ class TestPostModel(TestCase):
         self.assertEqual(self.post.likes_count, 0)
         self.assertEqual(self.post.timestamp, str(naturaltime(self.post.created)))
 
-    def test_post_image_created(self):
-        self.assertTrue(isinstance(self.post_image, PostImage))
-        self.assertEqual(str(self.post_image), f"{self.post.user.username} post image")
-        self.assertEqual(self.post_image.order, 0)
-
     def test_comment_created(self):
         self.assertTrue(isinstance(self.comment, Comment))
         self.assertEqual(str(self.comment), f'{self.comment.id} by {self.comment.user.username}')
@@ -34,7 +29,7 @@ class TestPostModel(TestCase):
         self.assertEqual(self.comment.timestamp, str(naturaltime(self.comment.created)))
 
     def test_image_url_resolved(self):
-        filename = 'test.jpg'
+        filename = 'testing.jpg'
 
         with NamedTemporaryFile(suffix='.jpg') as ntf:
             img = Image.new('RGB', (1, 1))

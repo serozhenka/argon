@@ -32,6 +32,5 @@ def clear_post_like_notifications(post_like: PostLike, sender: settings.AUTH_USE
     )
     notifications_to_delete_id_list = list(notifications_to_delete.values_list('id', flat=True))
     notifications_to_delete.delete()
-    print(notifications_to_delete_id_list)
 
     return notifications_to_delete_id_list

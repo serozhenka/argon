@@ -118,7 +118,7 @@
             let element = document.createElement('a')
             element.id = chatRoomElementId(room.other_user.username)
             element.classList.add('d-flex', 'align-items-center', 'p-3', 'hover-block', 'text-decoration-none', 'text-dark')
-            if (room.notification?.is_read === false) { element.classList.add('fw-bold') }
+            if (room.notification?.receiver && room.notification?.is_read === false) { element.classList.add('fw-bold') }
             element.href = "{% url 'chat:chat-page' username=123456789 %}".replace(123456789, room.other_user.username)
 
             element.innerHTML = `

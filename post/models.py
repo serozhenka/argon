@@ -36,13 +36,15 @@ class Post(models.Model):
     @property
     def get_first_image_url(self):
         first_image = self.post_images.order_by('id').first()
-        return first_image.image.url
+        if first_image and first_image.image:
+            return first_image.image.url
+        return None
 
 
 class PostImage(models.Model):
     """Like model to Post model."""
     post: Post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_images')
-    image = models.ImageField(upload_to=get_post_image_path)
+    image = models.ImageField(upload_to=get_post_image_path, null=True)
     order: int = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
