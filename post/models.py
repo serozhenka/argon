@@ -1,10 +1,12 @@
+import django
+# django.setup()
+
 from datetime import datetime, timedelta
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
 from notifications.models import Notification
 from users.models import Account

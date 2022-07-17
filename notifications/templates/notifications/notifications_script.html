@@ -2,7 +2,7 @@
 
 <script>
 
-    let ws_notifications_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% endif %}8000" + `/notifications/`
+    let ws_notifications_path = ws_scheme + "//" + window.location.host + `/notifications/`
     let notificationsSocket = new WebSocket(ws_notifications_path)
     let notificationsPageNumber = 1;
     let notificationsContainer = document.getElementById("notifications-container")
@@ -47,6 +47,15 @@
                 getNotificationsCount()
             }
 
+            if (msg_type === "new_chat_message_notification") {
+                let notification = JSON.parse(data.notifications)[0]
+                if (String(notification.room.id) !== "{{ room_id }}") {
+                    getMessagesNotificationsCount()
+                }
+            } else if (msg_type === "messages_notifications_count") {
+                updateMessagesNotificationsCount(data.count)
+            }
+
             {% if page == "chat" %}
                 if (msg_type === "new_chat_message_notification") {
                     let notification = JSON.parse(data.notifications)[0]
@@ -67,9 +76,8 @@
 
                 } else if (msg_type === "room_empty") {
                     removeChatRoomElement(data.other_username)
-                } else if (msg_type === "messages_notifications_count") {
-                    updateMessagesNotificationsCount(data.count)
                 }
+
             {% endif %}
 
             {% if page == "account" %}
@@ -280,6 +288,12 @@
         notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
     }
 
+    function updateMessagesNotificationsCount(count) {
+        let notificationsCountBadge = $(`#messages-notifications-count-badge`)
+        if (!notificationsCountBadge.length) { return null }
+        notificationsCountBadge.html(count)
+        notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
+    }
 
 </script>
 

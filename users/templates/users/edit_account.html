@@ -10,7 +10,7 @@
         </div>
 
         <div id="edit-account-image-container" style="position: relative">
-            <img id="edit-account-image" class="img-fluid rounded-circle" src="{{ account.image.url }}" alt="">
+            <img id="edit-account-image" class="img-fluid rounded-circle w-100" src="{{ account.image.url }}" alt="">
             <button id="edit-account-image-edit-btn" type="button" class="btn btn-secondary rounded-0 edit-image-btn disable-focus" style="opacity: 0">Edit</button>
         </div>
     </div>
@@ -18,7 +18,7 @@
     <form id="account-edit-form" action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <input class="d-none" type="file" name="image" id="account-image-file-selector" accept="image/*" onchange="readURL(this)">
+        <input class="d-none" type="file" name="image" id="account-image-file-selector" accept="image/png, image/jpeg" onchange="readURL(this)">
 
         <div class="mb-3">
             <label class="form-label">Username</label>
@@ -53,6 +53,10 @@
         <button form="account-edit-form" type="submit" class="btn btn-sm btn-secondary d-block">Save</button>
     </div>
 
+{% endblock dashboard_content %}
+
+{% block script %}
+
     <script>
 
         let cropper, cropX, cropY, cropWidth, cropHeight, imageFile, base64ImageString;
@@ -76,6 +80,7 @@
 
                 cropper = new Cropper(accountImage, {
                   aspectRatio: 1 / 1,
+                  viewMode: 1,
                   crop(event) {
                     setAccountImageCropProperties(
                         image,
@@ -94,7 +99,7 @@
             let startIndex = image.indexOf('base64,') + 7
             let base64String = image.substr(startIndex)
             let decoded = atob(base64String)
-            return decoded.length <= "{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}" ? base64String : null;
+            return decoded.length <= Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}") ? base64String : null;
         }
 
         function cropImage(image, x, y, width, height) {
@@ -142,11 +147,9 @@
 
         function enableImageOverlay() {
             editBtn.style.cursor = 'pointer'
-            editBtn.style.transition = '.5s ease'
+            editBtn.style.transition = 'all .5s'
 
-            accountImage.style.opacity = '1'
-            accountImage.style.transition = '.5s ease'
-            accountImage.style.backfaceVisibility = 'hidden'
+            accountImage.style.transition = 'all .5s'
             accountImage.style.cursor = 'pointer'
 
             imageContainer.addEventListener('mouseover', imageContainerMouseOver)
@@ -181,13 +184,13 @@
 
         // Event listeners
         function imageContainerMouseOver() {
-          accountImage.style.opacity = '0.3'
           editBtn.style.opacity = '1'
+          accountImage.style.opacity = '0.3'
         }
 
         function imageContainerMouseOut() {
-          accountImage.style.opacity = '1'
           editBtn.style.opacity = '0'
+          accountImage.style.opacity = '1'
         }
 
         function imageContainerMouseClick() {
@@ -195,4 +198,4 @@
         }
     </script>
 
-{% endblock dashboard_content %}
+{% endblock script %}

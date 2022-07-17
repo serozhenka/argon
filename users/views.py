@@ -205,7 +205,9 @@ def crop_image(request, username):
                     cropped_image = cv2.resize(cropped_image, (300, 300))
 
             cv2.imwrite(url, cropped_image)
-            account.image.delete(save=False)
+
+            if settings.DEFAULT_PROFILE_IMAGE_FILEPATH not in account.image.url:
+                account.image.delete(save=False)
             account.image.save("profile_image.png", files.File(open(url, 'rb')))
 
             payload['result'] = 'success'

@@ -16,7 +16,7 @@
     <script>
         let limit = 20;
         let usersContainer = document.getElementById('followers-container')
-        let url = "{% url 'api:api-followers-list' username=account_username %}" + `?limit=${limit}&offset=0`
+        let url = window.location.origin + "{% url 'api:api-followers-list' username=account_username %}" + `?limit=${limit}&offset=0`
 
         usersContainer.addEventListener('scroll', scrollListener)
         getNextPage()
@@ -26,6 +26,7 @@
             .then(response => response.json())
             .then(data => {
               url = data.next
+              if (url && window.location.protocol === "https:") { url = url.replace("http:", "https:") }
               if (!url) { usersContainer.removeEventListener('scroll', scrollListener) }
               containerAppendData(data.results)
             })

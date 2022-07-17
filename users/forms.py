@@ -4,6 +4,8 @@ from django.contrib.auth.forms import UserCreationForm
 
 from .models import Account
 
+alphabet = "abcdefghijklmnopqrstuvwxyz"
+
 
 class RegisterForm(UserCreationForm, forms.ModelForm):
 
@@ -15,32 +17,27 @@ class RegisterForm(UserCreationForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(RegisterForm, self).__init__(*args, **kwargs)
         for _, field in self.fields.items():
-            field.widget.attrs.update({'class': 'form-control'})
-
-        self.fields['email'].widget.attrs['placeholder'] = 'Enter email'
-        self.fields['username'].widget.attrs['placeholder'] = 'Enter username'
-        self.fields['password1'].widget.attrs['placeholder'] = 'Enter password'
-        self.fields['password2'].widget.attrs['placeholder'] = 'Confirm password'
+            field.widget.attrs.update({'class': 'form-control py-2 text-muted', 'placeholder': " "})
 
     def clean_username(self):
         username = self.cleaned_data['username']
         if username == username.lower():
             if username.isdecimal():
                 raise forms.ValidationError('Username can not contain only numbers')
-            if not all([x.isalnum() or x == '_' for x in username]):
+            if not all([x.isnumeric() or x == '_' or x in alphabet for x in username]):
                 raise forms.ValidationError('Username can only contain lowercase letters, numbers and underscores')
         return username
 
 
 class LoginForm(forms.Form):
 
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Enter email'}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Enter password'}))
+    email = forms.EmailField(widget=forms.EmailInput())
+    password = forms.CharField(widget=forms.PasswordInput())
 
     def __init__(self, *args, **kwargs):
         super(LoginForm, self).__init__(*args, **kwargs)
         for _, field in self.fields.items():
-            field.widget.attrs.update({'class': 'form-control'})
+            field.widget.attrs.update({'class': 'form-control py-2 text-muted', 'placeholder': " "})
 
     def clean(self):
         if self.is_valid():
@@ -56,3 +53,12 @@ class AccountEditForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ('username', 'name', 'bio')
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if username == username.lower():
+            if username.isdecimal():
+                raise forms.ValidationError('Username can not contain only numbers')
+            if not all([x.isnumeric() or x == '_' or x in alphabet for x in username]):
+                raise forms.ValidationError('Username can only contain lowercase letters, numbers and underscores')
+        return username

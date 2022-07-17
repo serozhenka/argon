@@ -1,5 +1,7 @@
-import json
 import cv2
+import json
+import urllib
+import numpy as np
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -31,8 +33,15 @@ def post_add_page(request):
         for i in range(0, len(images)):
             post_img = PostImage.objects.create(post=post, image=images[i], order=i)
 
-            absolute_url = str(settings.BASE_DIR) + post_img.image.url
-            img = cv2.imread(absolute_url)
+            if settings.USE_S3:
+                absolute_url = post_img.image.url
+                req = urllib.request.urlopen(absolute_url)
+                arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
+                img = cv2.imdecode(arr, -1)
+            else:
+                absolute_url = str(settings.BASE_DIR) + post_img.image.url
+                img = cv2.imread(absolute_url)
+
             width, height = int(img.shape[1]), int(img.shape[0])
 
             if height / width > 1.25:  # 5 / 4

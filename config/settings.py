@@ -4,6 +4,7 @@ from decouple import config
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -16,7 +17,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["argon-social.herokuapp.com", 'localhost', 'www.argon-social.com', 'argon-social.com']
 
 
 # Application definition
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'algoliasearch_django',
     'channels',
+    'storages',
 
     # internal apps
     'users.apps.UsersConfig',
@@ -125,27 +127,51 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+USE_S3 = config('USE_S3', cast=bool)
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media/'
+if USE_S3:
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    # s3 static settings
+    AWS_LOCATION = 'static'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+    PUBLIC_MEDIA_LOCATION = 'media'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+    DEFAULT_FILE_STORAGE = 'config.storage_backends.MediaStorage'
+else:
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles/'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media/'
+
+STATICFILES_DIRS = [BASE_DIR / 'static/', ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'users.Account'
+
+
 DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 DEFAULT_POST_IMAGE_FILEPATH = 'post_images/'
-AUTH_USER_MODEL = 'users.Account'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
+
+if DEBUG:
+    BASE_URL = "http://localhost:8000"
+else:
+    BASE_URL = "https://www.argon-social.com"
+
 TEMP = os.path.join(BASE_DIR, 'media/profile_images/temp')
 
-# if DEBUG:
-#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# else:
+
+# Email backend configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
@@ -153,30 +179,38 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
+
+# Django Rest Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ]
 }
 
+
+# Algolia search client configuration
 ALGOLIA = {
     'APPLICATION_ID': config('ALGOLIA_APPLICATION_ID'),
     'API_KEY': config('ALGOLIA_API_KEY'),
     'INDEX_PREFIX': 'argon',
 }
 
-USE_THOUSAND_SEPARATOR = True
-THOUSAND_SEPARATOR = ','
-DECIMAL_SEPARATOR = '.'
-NUMBER_GROUPING = 3
+
+# Redis configuration
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [config('REDIS_URL')],
         },
     },
 }
 
-BASE_URL = "http://localhost:8000"
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://argon-social.herokuapp.com",
+    "http://argon-social.herokuapp.com",
+    'https://www.argon-social.com',
+    'http://www.argon-social.com',
+]

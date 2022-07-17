@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="col-10 position-relative mt-5 mx-auto">
+        <img class="img-fluid rounded d-block mx-auto" src="https://d1nslcd7m2225b.cloudfront.net/Pictures/480xAny/7/2/5/1374725_minionsriseofgru_550292.jpg" alt="">
+        <span class="display-6 text-center position-absolute top-50 start-50 text-light p-3 rounded" style="text-shadow: 0 0 3px white; transform: translate(-50%, -50%); background: rgba(33, 37, 41, 0.9)">
+            {% block error_message %} {% endblock error_message %}
+        </span>
+    </div>
+
+{% endblock content %}

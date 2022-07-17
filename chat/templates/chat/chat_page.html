@@ -67,7 +67,7 @@
         let hitsContainer = document.getElementById("hits")
         let chatRoomElementsNotToQueryMore = []
 
-        let roomUrl = "{% url 'api:api-chat-rooms-list' %}" + `?limit=${roomQueryLimit}&offset=0`
+        let roomUrl = window.location.origin + "{% url 'api:api-chat-rooms-list' %}" + `?limit=${roomQueryLimit}&offset=0`
         let chatRoomUrl = "{% url 'api:api-chat-room' username=123456789 %}"
 
         let roomsObserver = createIntersectionObserver(roomsCallback)
@@ -100,6 +100,7 @@
             .then(response => response.json())
             .then(data => {
                 roomUrl = data.next
+                if (roomUrl && window.location.protocol === "https:") { roomUrl = roomUrl.replace("http:", "https:") }
                 appendChatRoom(data.results)
                 if (!roomUrl) { roomsObserver.unobserve(roomsObserveContainer); roomsObserveContainer.remove()}
             })
@@ -127,7 +128,7 @@
                     <div class="online-status-container online-${room.other_user.online ? "active" : "inactive"}"></div>
                 </div>
                 <div class="col-10 d-flex flex-column">
-                    <div class="fw-bold">
+                    <div class="fw-bold text-overflow">
                         ${room.other_user.username}
                     </div>
                     <div class="fs-14px text-overflow">
@@ -205,23 +206,6 @@
             return validatedText
         }
 
-        function validateText(string) {
-            let md = window.markdownit().set({
-                highlight: function (str, lang) {
-                    if (lang && hljs.getLanguage(lang)) {
-                        try {
-                        return '<pre class="hljs"><code>' +
-                           hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-                           '</code></pre>';
-                    } catch (__) {}
-                    } else {
-                        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-                    }
-                }
-            });
-            return md.render(string);
-        }
-
         // end of syntax highlight functions
 
         // functions to handle message notifications
@@ -234,13 +218,6 @@
             chatRoomsContainer.insertBefore(chatRoomElement, chatRoomsContainer.firstElementChild)
 
             changeChatRoomUserAndText(other_username, notification.message.username , notification.message.body)
-        }
-
-        function updateMessagesNotificationsCount(count) {
-            let notificationsCountBadge = $(`#messages-notifications-count-badge`)
-            if (!notificationsCountBadge.length) { return null }
-            notificationsCountBadge.html(count)
-            notificationsCountBadge.animate({opacity: count ? 1 : 0}, 700)
         }
 
         // end of functions to handle message notifications
@@ -261,7 +238,7 @@
             let firstUnreadMessageFound = false
             let unreadMessagesArray = []
 
-            let ws_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug %}8001{% endif %}8000" + `/chat/${roomId}/`
+            let ws_path = ws_scheme + "//" + window.location.host + `/chat/${roomId}/`
             let chatSocket = new WebSocket(ws_path)
 
             preLoadImage("{{ other_user.image.url }}", "other_user_profile_image")
@@ -324,7 +301,7 @@
 
                         case "error": handleError(data.code, data.message); break;
 
-                        case "pagination_exhausted": paginationExhausted(); break;
+                        case "pagination_exhausted": messagesPaginationExhausted();break;
                         case "display_loading_spinner": displayLoadingSpinner(data.display); break;
                     }
                 }
@@ -399,7 +376,7 @@
                 return div
             }
 
-            function paginationExhausted() {
+            function messagesPaginationExhausted() {
                 pageNumber = -1
                 messagesObserver.unobserve(messagesObserveContainer)
                 messagesObserveContainer.remove()

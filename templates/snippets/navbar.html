@@ -46,7 +46,7 @@
 {#<script>#}
 {##}
 {#    let ws_userOnlineStatusSocket_path = ws_scheme + "//" + window.location.hostname + ":{% if not debug_mode %}8001{% else %}8000{% endif %}" + `/user/online/`#}
-{#    let userOnlineStatusSocket = new ReconnectingWebSocket(ws_userOnlineStatusSocket_path)#}
+{#    let userOnlineStatusSocket = new Websocket(ws_userOnlineStatusSocket_path)#}
 {##}
 {#    userOnlineStatusSocket.onopen = function(e) {#}
 {#        console.log('userOnlineStatusSocket websocket opened')#}

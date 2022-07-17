@@ -4,10 +4,46 @@
 
 {% block content %}
 
+    <style>
+
+        .custom-input-group:hover {
+            border-color: var(--primary-color);
+        }
+
+        .custom-input-group input {
+            box-shadow: none!important;
+        }
+
+        .custom-input-group label {
+            position: absolute;
+            background-color: transparent;
+            line-height: 24px;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            padding: .375rem .75rem;
+            margin-bottom: 0;
+            transition: all .3s;
+        }
+
+        .custom-input-group:focus-within label,
+        .custom-input-group input:not(:placeholder-shown) ~ label {
+            padding: 0 8px;
+            background-color: white;
+            top: -14px;
+            left: 7px;
+            bottom: auto;
+            color: var(--primary-color)!important;
+            border-radius: 5px;
+        }
+
+
+    </style>
+
     <section>
         <div class="container-fluid p-0">
             <div class="row justify-content-center align-items-center m-0" style="height: 100vh; min-height: 700px">
-                <div class="col-lg-8 col-10 auth-container bg-light" style="min-height: 500px;">
+                <div class="col-lg-8 col-11 auth-container bg-light" style="min-height: 500px;">
                     <div class="row justify-content-center" style="height: 100%; background-color: white">
                         <div class="col-6 d-none d-lg-block p-0" style="height: 100%">
                             <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-bs-ride="carousel" style="height: 100%">
@@ -29,20 +65,20 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-8 col-10 p-3">
+                        <div class="col-md-6 col-sm-8 col-12 p-3">
                             <div class="row align-items-center px-lg-5 px-2" style="height: 100%">
                                 <div>
-                                    <h1 class="header-font text-center">Argon</h1>
+                                    <h1 class="header-font text-center mb-4" style="font-size: 50px">Argon</h1>
 
-                                    <div class="">
+                                    <div>
                                         {% if page == "login" %}
                                             <form action="{% url 'account:login' %}" method="POST" id="login-form">
                                                 {% csrf_token %}
 
                                                 {% for field in form %}
-                                                    <div class="mb-2">
-                                                        <label for="" class="form-label">{{ field.label }}</label>
+                                                    <div class="mb-4 position-relative custom-input-group">
                                                         {{ field }}
+                                                        <label for="" class="form-label placeholder-text text-muted">{{ field.label }}</label>
                                                     </div>
                                                 {% endfor %}
 
@@ -66,25 +102,26 @@
                                                 <span class="mx-3 ">or</span>
                                                 <div class="or-line"></div>
                                             </div>
-{#                                            <a href="#">Login through google</a>#}
                                             <div class="text-center">
                                                 New to Argon?
                                                 <a class="link link-color" href="{% url 'account:register' %}">Register</a>
                                             </div>
 
                                         {% elif page == "register" %}
+                                            <div>
 
-                                            <form action="{% url 'account:register' %}" method="POST" id="register-form">
-                                                {% csrf_token %}
+                                                <form action="{% url 'account:register' %}" method="POST" id="register-form">
+                                                    {% csrf_token %}
 
-                                                {% for field in form %}
-                                                    <div class="mb-2">
-                                                        <label for="" class="form-label">{{ field.label }}</label>
-                                                        {{ field }}
-                                                    </div>
-                                                {% endfor %}
+                                                    {% for field in form %}
+                                                        <div class="mb-4 position-relative custom-input-group">
+                                                            {{ field }}
+                                                            <label for="" class="form-label placeholder-text text-muted">{{ field.label }}</label>
+                                                        </div>
+                                                    {% endfor %}
 
-                                            </form>
+                                                </form>
+                                            </div>
 
                                             <div class="mb-2">
                                                 {% for err in form.non_field_errors %}
@@ -92,9 +129,11 @@
                                                         <span>{{ err }}</span>
                                                     </div>
                                                 {% endfor %}
-                                                <div class="text-danger">
-                                                    <small>- {{ form.errors|show_error }}</small>
-                                                </div>
+                                                {% if form.errors|show_error %}
+                                                    <div class="text-danger">
+                                                        <small>- {{ form.errors|show_error }}</small>
+                                                    </div>
+                                                {% endif %}
                                             </div>
 
                                             <div class="d-grid gap-4">
@@ -121,5 +160,17 @@
             </div>
         </div>
     </section>
+
+    <script>
+        let labels = document.querySelectorAll('.form-label')
+
+        labels.forEach(function (label) {
+            label.onclick = function() {
+                $(label).parent().find('input').focus()
+            }
+        })
+
+    </script>
+
 
 {% endblock content %}

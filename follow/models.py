@@ -1,5 +1,6 @@
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+import django
+# django.setup()
+
 from datetime import datetime
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation, ContentType
@@ -13,8 +14,6 @@ from .utils import clear_fr_notifications, clear_following_notifications
 from notifications.utils import send_notification_to_channel_layer, send_notification_delete_to_channel_layer
 from notifications.models import Notification
 from users.models import Account
-
-channel_layer = get_channel_layer()
 
 
 class Following(models.Model):

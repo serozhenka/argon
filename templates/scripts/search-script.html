@@ -1,3 +1,5 @@
+{% load static %}
+
 <script>
 
     const algoliaClient = algoliasearch('M89G8K0SXM', '5a2626dd2a640da591855e1711bf63ad');
@@ -81,7 +83,7 @@
           insertContainer.innerHTML += `
                 <a class="d-flex {% if page == "chat" %}p-3{% else %}p-2{% endif %} text-decoration-none link text-dark user-block align-items-center" href="${redirectUrl}">
                   <div class="col-1 me-3">
-                      <img class="img-fluid rounded-circle" src="https://upload.wikimedia.org/wikipedia/commons/e/e6/1kb.png" alt="user-profile-image" id="${hit.username}_image">
+                      <img class="img-fluid rounded-circle" src="{% static 'images/default.png' %}" id="${hit.username}_image">
                   </div>
                   <div class="col-11 d-flex align-items-center justify-content-between">
                       <div><span class="fw-bold">${hit.username}</span><br/><span class="text-muted">${hit.name}</span></div>

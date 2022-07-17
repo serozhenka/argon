@@ -18,7 +18,7 @@
 
                             {% if request.user == account %}
                                 <a href="{% url 'account:account-edit' username=request.user.username %}" class="btn btn-outline-secondary fs-14px py-1 px-3 disable-focus">
-                                    Edit profile
+                                    Edit
                                 </a>
                             {% else %}
                                 <div class="dropdown">
@@ -66,9 +66,9 @@
 
                         {% if request.user != account %}
                             <div class="d-flex align-items-center mt-2">
-                                <button class="btn btn-outline-dark btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button">
+                                <a href="{% url 'chat:chat-page' username=account.username %}" class="btn btn-outline-dark btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button">
                                     Message
-                                </button>
+                                </a>
 
                                 <div id="fr-action-button-container">
                                     {% if is_following %}
@@ -122,7 +122,7 @@
 
                 </div>
 
-                {% if is_following or request.user == account %}
+                {% if is_following or request.user == account or account.is_public %}
                     <div id="observe-container" class="d-block py-3"></div>
                 {% else %}
                     <div id="account-is-private">
@@ -144,7 +144,7 @@
         let limit = 12;
         let postContainer = document.getElementById('post-container')
         let observeContainer = document.getElementById('observe-container')
-        let url = "{% url 'api:api-post-list-by-user' username=account.username %}" + `?limit=${limit}&offset=0`
+        let url = window.location.origin + "{% url 'api:api-post-list-by-user' username=account.username %}" + `?limit=${limit}&offset=0`
 
         let observer;
         observer = new IntersectionObserver(callback, {
@@ -161,13 +161,14 @@
             }
         }
 
-        {% if is_following or request.user == account %} observer.observe(observeContainer) {% endif %}
+        {% if is_following or request.user == account or account.is_public %} observer.observe(observeContainer) {% endif %}
 
         function getNextPage() {
             fetch(url)
             .then(response => response.json())
             .then(data => {
               url = data.next
+              if (url && window.location.protocol === "https:") { url = url.replace("http:", "https:") }
               if (!url) { observer.unobserve(observeContainer) }
               containerAppendData(data.results)
             })

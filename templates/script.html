@@ -9,7 +9,7 @@
       'Content-Type': 'application/json',
     }
 
-    function updateLikesCount(element, count) { element.innerText = String(count) }
+    function updateLikesCount(element, count) { element.innerText = count.toLocaleString() }
     function updateLikesWord(element, likes_count) { element.innerText = likes_count === 1 ? "like": "likes" }
     function updateLikesButton(element, is_liked) {
         element.classList.remove(is_liked ? 'fa-light': 'fa-solid')
@@ -57,8 +57,7 @@
         .then(data => {
           if (data.response_result === "success") {
               let commentDiv = commentElement(data.comment_id, "{{ request.user.username }}", descriptionField.value, "now", 0, false)
-              let insertPosition = postCommentsContainer.childNodes[0].tagName !== "DIV" ? 1: 0;
-              postCommentsContainer.insertBefore(commentDiv, postCommentsContainer.childNodes[insertPosition])
+              postCommentsContainer.insertBefore(commentDiv, postCommentsContainer.firstElementChild)
 
               commentsButtonEventListeners(data.comment_id, "{{ request.user.username }}")
               preLoadImage("{{ request.user.image.url }}",`${data.comment_id}_comment_profile_image`)
@@ -126,7 +125,7 @@
                </div>
                <div class="col-9 ms-3">
                    <a class="fw-bold link text-dark">${userUsername}</a>
-                   <div class="text-muted fs-14px" style="word-wrap: break-word">${description}</div>
+                   <div class="text-muted fs-14px comment-box" style="word-wrap: break-word">${validateText(description)}</div>
                    <div class="d-flex justify-content-between">
                        <span class="fs-14px mt-2 text-muted">${timestamp}</span>
                    </div>
@@ -165,6 +164,23 @@
                 document.getElementById(`${e.target.dataset.post_id}-post-comment-button`).click()
             }
         })
+    }
+
+    function validateText(string) {
+        let md = window.markdownit().set({
+            highlight: function (str, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                    return '<pre class="hljs"><code>' +
+                       hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                       '</code></pre>';
+                } catch (__) {}
+                } else {
+                    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+                }
+            }
+        });
+        return md.render(string);
     }
 
 </script>

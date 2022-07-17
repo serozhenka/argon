@@ -7,7 +7,7 @@ from .forms import RegisterForm
 
 class AccountAdmin(UserAdmin):
     add_form = RegisterForm
-    list_display = ('email', 'username', 'name', 'is_online', 'is_staff')
+    list_display = ('email', 'username', 'name', 'is_online', 'is_staff', 'last_login')
     search_fields = ('email', 'username')
     readonly_fields = ('id',)
 

@@ -9,6 +9,7 @@
     --hover-link-color: #0f6a94;
     --online-icon-color: #40b340;
     --badge-color: #FF3041FF;
+    --primary-color: #0d6efd;
 }
 
 body {
@@ -83,6 +84,10 @@ body {
     box-shadow: 0 0 5px #bebebe;
 }
 
+#login-form div:last-of-type, #register-form div:last-of-type {
+    margin-bottom: 1rem!important;
+}
+
 .or-line {
     background-color: var(--gray-color);
     flex-grow: 1;
@@ -115,8 +120,28 @@ body {
     border-radius: 0 5px 5px 0;
 }
 
-.dashboard-sidebar > .active {
-    border-left: 3px solid var(--semi-gray-color);
+@media (min-width: 768px) {
+    .dashboard-sidebar > .active {
+        border-left: 3px solid var(--semi-gray-color);
+    }
+
+    .dashboard-sidebar > a:hover{
+        border-left: 3px solid var(--gray-color);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-sidebar > .active {
+        border-bottom: 3px solid var(--semi-gray-color);
+    }
+
+    .dashboard-sidebar > a:hover{
+        border-bottom: 3px solid var(--gray-color);
+    }
+
+    .dashboard-sidebar {
+        font-size: 14px;
+    }
 }
 
 .dashboard-sidebar > a {
@@ -125,7 +150,6 @@ body {
 
 .dashboard-sidebar > a:hover{
     background-color: var(--main-bg-color);
-    border-left: 3px solid var(--gray-color);
 }
 
 .edit-image-btn {
@@ -140,21 +164,16 @@ body {
     width: 30%;
 }
 
-@media (max-width: 992px) {
+
+@media (max-width: 768px) {
     #account-image-container-helper {
         width: 40%;
     }
 }
 
-@media (max-width: 768px) {
-    #account-image-container-helper {
-        width: 50%;
-    }
-}
-
 @media (max-width: 576px) {
     #account-image-container-helper {
-        width: 60%;
+        width: 50%;
     }
 }
 
@@ -339,4 +358,8 @@ body {
 .logo-hover:hover {
     opacity: 0.7!important;
     transform: rotate(360deg) scale(1.2);
+}
+
+.comment-box p {
+    margin-bottom: 0!important;
 }
