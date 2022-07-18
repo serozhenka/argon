@@ -1,7 +1,5 @@
 import cv2
 import json
-import urllib
-import numpy as np
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -11,7 +9,15 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
 from .models import Post, PostImage, PostLike, Comment, CommentLike
-from .utils import is_post_liked_by_user, private_account_action_permission
+from .utils import (
+    is_post_liked_by_user,
+    private_account_action_permission,
+
+    get_bucket_object,
+    read_image_from_bucket,
+    compress_image,
+    write_image_to_bucket,
+)
 
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -22,7 +28,10 @@ def feed_page(request):
 @login_required(login_url=reverse_lazy('account:login'))
 def post_add_page(request):
     if request.method == "GET":
-        return render(request, 'post/post_add.html')
+        context = {
+            'DATA_UPLOAD_MAX_MEMORY_SIZE': settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
+        }
+        return render(request, 'post/post_add.html', context=context)
 
     elif request.method == "POST":
         images = request.FILES.getlist('images')
@@ -32,24 +41,28 @@ def post_add_page(request):
 
         for i in range(0, len(images)):
             post_img = PostImage.objects.create(post=post, image=images[i], order=i)
+            extension = post_img.image.url.split('.')[-1]
 
             if settings.USE_S3:
-                absolute_url = post_img.image.url
-                req = urllib.request.urlopen(absolute_url)
-                arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-                img = cv2.imdecode(arr, -1)
+                bucket_object = get_bucket_object(post_img.image.url)
+                img, dimensions, exif = read_image_from_bucket(bucket_object)
+                width, height = dimensions
             else:
                 absolute_url = str(settings.BASE_DIR) + post_img.image.url
                 img = cv2.imread(absolute_url)
+                width, height = int(img.shape[1]), int(img.shape[0])
 
-            width, height = int(img.shape[1]), int(img.shape[0])
+            if height / width > 1.5:  # 3 / 2
+                img = img[int(height/2 - 0.75*width):int(height/2 + 0.75*width), 0:width]
+            elif height / width < 0.67:  # 2 / 3
+                img = img[0:height, int(width/2 - 0.75*height):int(width/2 + 0.75*height)]
 
-            if height / width > 1.25:  # 5 / 4
-                img = img[int(height/2 - 5/8*width):int(height/2 + 5/8*width), 0:width]
-            elif height / width < 0.8:  # 4 / 5
-                img = img[0:height, int(width/2 - 5/8*height):int(width/2 + 5/8*height)]
+            img = compress_image(img, extension)
 
-            cv2.imwrite(absolute_url, img)
+            if settings.USE_S3:
+                write_image_to_bucket(bucket_object, img, extension, exif)
+            else:
+                cv2.imwrite(absolute_url, img)
 
         return redirect('account:account', request.user.username)
 

@@ -4,7 +4,7 @@
 {% block content %}
 
     <section class="mt-4">
-        <div class="row">
+        <div class="row mx-0">
             <div class="col-lg-6 col-md-8 col-10 mx-auto">
                 <div id="upload-new-container" class="d-flex align-items-center justify-content-center mx-auto bg-light box-shadow rounded" style="max-width: 350px; height: 300px;">
                     <div class="h3">Upload new images</div>
@@ -23,7 +23,7 @@
                     {% csrf_token %}
 
                      <div class="mb-3">
-                        <input class="d-none" type="file" name="images" id="account-image-file-selector" accept="image/*" required multiple onchange="readURL(this)">
+                        <input class="d-none" type="file" name="images" id="account-image-file-selector" accept=".png, .jpeg, .jpg" required multiple onchange="readURL(this)">
                     </div>
 
                     <div class="mb-3">
@@ -50,6 +50,10 @@
     const postCreateForm = document.getElementById("post-create-form")
     let submitButton = document.getElementById("submit-button")
 
+    function isImageSizeValid(image) {
+        return image.size <= Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}");
+    }
+
     enableUploadNewContainerOverlay()
     function readURL(input) {
 
@@ -60,6 +64,14 @@
         }
 
         if (input.files.length > 0) {
+            console.log(input.files)
+            for (let i = 0; i < input.files.length; i++) {
+                if (!isImageSizeValid(input.files[i])) {
+                    alert("One of uploaded images exceeds the maximum uploading file size of 10 MB")
+                    fileSelector.value = ""
+                    return;
+                }
+            }
 
             submitButton.addEventListener('click', function(e) {
                 submitButton.setAttribute("disabled", "true")

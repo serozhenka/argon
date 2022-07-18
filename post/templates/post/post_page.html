@@ -8,25 +8,33 @@
         <div class="row mx-0">
             <div class="col-lg-9 col-md-8 col-sm-9 col-11 mx-auto">
                 <div class="row bg-light rounded box-shadow">
-                    <div class="col-lg-7 col-12 p-0">
+                    <div class="col-lg-7 col-12 p-0" style="background-color: var(--main-bg-color); border-right: 1px solid rgba(0,0,0,0.05)">
                         {% if post.post_images.all.count == 1 %}
                             <div class="d-flex" style="height: 600px;">
-                                <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                                <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_0" style="border-radius: 0!important; object-fit: contain; min-height: 450px;">
                             </div>
                         {% else %}
                             <div id="carouselExampleIndicators" class="carousel slide rounded box-shadow" data-bs-interval="false">
                                 <div class="carousel-indicators" id="carouselButtonsIndicators">
                                     {% for post_image in post.post_images.all %}
-                                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.counter0 == 0 %}active{% endif %}"></button>
+                                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ forloop.counter0 }}" class="rounded {% if forloop.counter0 == 0 %}active{% endif %}" style="border: 1px solid rgba(0,0,0,0.5)"></button>
                                     {% endfor %}
                                 </div>
-                                <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--semi-gray-color);">
+                                <div class="d-flex align-items-center carousel-inner" id="carouselImagesIndicators" style="background-color: var(--main-bg-color);">
                                     {% for post_image in post.post_images.all %}
                                         <div class="carousel-item {% if forloop.counter0 == 0 %}active{% endif %}" style="height: 600px;">
-                                            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: cover; min-height: 450px;">
+                                            <img src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100" id="{{ post.id }}_post_image_{{ forloop.counter0 }}" style="border-radius: 0!important; object-fit: contain; min-height: 450px;">
                                         </div>
                                     {% endfor %}
                                 </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev" style="width:10%">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next" style="width:10%">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
                             </div>
                         {% endif %}
                     </div>

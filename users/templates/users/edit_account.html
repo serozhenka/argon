@@ -18,7 +18,7 @@
     <form id="account-edit-form" action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <input class="d-none" type="file" name="image" id="account-image-file-selector" accept="image/png, image/jpeg" onchange="readURL(this)">
+        <input class="d-none" type="file" name="image" id="account-image-file-selector" accept=".png, .jpeg, .jpg" onchange="readURL(this)">
 
         <div class="mb-3">
             <label class="form-label">Username</label>
