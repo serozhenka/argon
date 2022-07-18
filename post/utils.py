@@ -78,4 +78,4 @@ def write_image_to_bucket(bucket_object, image_array, extension, exif):
     file_stream = BytesIO()
     img = Image.fromarray(image_array)
     img.save(file_stream, exif=exif if exif else b'', format=extension)
-    bucket_object.put(Body=file_stream.getvalue())
+    bucket_object.put(Body=file_stream.getvalue(), ContentType=f"image/{extension}")

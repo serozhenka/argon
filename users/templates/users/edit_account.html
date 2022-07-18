@@ -68,8 +68,18 @@
 
         enableImageOverlay()
 
+        function isImageSizeValid(image) {
+            return image.size <= Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}");
+        }
+
         function readURL(input) {
             if (input.files && input.files[0]) {
+              if (!isImageSizeValid(input.files[0])) {
+                    alert("Uploaded image exceeds the maximum uploading file size of 10 MB")
+                    window.location.reload()
+                    return;
+                }
+
               let fileReader = new FileReader()
 
               fileReader.onload = function (e) {
@@ -95,20 +105,13 @@
             }
         }
 
-        function isImageSizeValid(image) {
+        function getImageBase64String(image) {
             let startIndex = image.indexOf('base64,') + 7
-            let base64String = image.substr(startIndex)
-            let decoded = atob(base64String)
-            return decoded.length <= Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}") ? base64String : null;
+            return image.substr(startIndex)
         }
 
         function cropImage(image, x, y, width, height) {
-            base64ImageString = isImageSizeValid(image)
-            if (!base64ImageString) {
-              alert('Image upload size is big. Please choose smaller size image')
-              window.location.reload()
-              return null;
-            }
+            base64ImageString = getImageBase64String(image)
 
             let requestData = {
                 "csrfmiddlewaretoken": "{{ csrf_token }}",
