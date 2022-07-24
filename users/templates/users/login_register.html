@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load show_error %}
+{% load custom_templatetags %}
 
 {% block content %}
 
@@ -53,14 +53,14 @@
                                     <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
                                 </div>
                                 <div class="carousel-inner" style="height: 100%">
-                                    <div class="carousel-item active">
-                                        <img src="{% static 'images/auth-page-photo-1.jpg' %}" class="d-block w-100">
+                                    <div class="carousel-item active h-100">
+                                        <img id="carouselImage_1" src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100 objfit-cover">
                                     </div>
-                                    <div class="carousel-item">
-                                        <img src="{% static 'images/auth-page-photo-2.jpg' %}" class="d-block w-100">
+                                    <div class="carousel-item h-100">
+                                        <img id="carouselImage_2" src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100 objfit-cover">
                                     </div>
-                                    <div class="carousel-item">
-                                        <img src="{% static 'images/auth-page-photo-3.jpg' %}" class="d-block w-100">
+                                    <div class="carousel-item h-100">
+                                        <img id="carouselImage_3" src="{% static 'images/gray-bg.png' %}" class="d-block w-100 h-100 objfit-cover">
                                     </div>
                                 </div>
                             </div>
@@ -162,6 +162,11 @@
     </section>
 
     <script>
+        {% for i in '123'|make_list %}
+            console.log("{{ 'images/auth-page-photo-'|addstr:forloop.counter }}")
+            preLoadImage("{% static 'images/auth-page-photo-'|addstr:forloop.counter|addstr:'.jpg' %}", 'carouselImage_{{ forloop.counter }}')
+        {% endfor %}
+
         let labels = document.querySelectorAll('.form-label')
 
         labels.forEach(function (label) {

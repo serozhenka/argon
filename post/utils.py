@@ -63,6 +63,7 @@ def read_image_from_bucket(bucket_object):
 
 
 def compress_image(image_array, extension):
+    # compress image
     if extension in ["jpg", "jpeg"]:
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 25]
     else:
@@ -70,6 +71,18 @@ def compress_image(image_array, extension):
 
     encoded_img = cv2.imencode(f".{extension}", image_array, encode_param)[1]
     decoded_img = cv2.imdecode(encoded_img, 1)
+
+    # resize image
+    width, height = decoded_img.shape[1], decoded_img.shape[0]
+    if max(width, height) > 1400:
+        scale_percent = (1400 / max(width, height)) * 100  # percent of original size
+
+        resize_width = int(width * scale_percent / 100)
+        resize_height = int(height * scale_percent / 100)
+        dim = (resize_width, resize_height)
+
+        decoded_img = cv2.resize(decoded_img, dim, interpolation=cv2.INTER_AREA)
+
     return decoded_img
 
 def write_image_to_bucket(bucket_object, image_array, extension, exif):

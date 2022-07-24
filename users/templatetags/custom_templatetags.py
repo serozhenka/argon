@@ -9,3 +9,8 @@ def show_error(dictionary):
         return list(dictionary.values())[0][0]
     except (TypeError, IndexError, AttributeError):
         return ''
+
+@register.filter
+def addstr(arg1, arg2):
+    """concatenate arg1 & arg2"""
+    return str(arg1) + str(arg2)

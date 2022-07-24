@@ -363,3 +363,7 @@ body {
 .comment-box p {
     margin-bottom: 0!important;
 }
+
+.objfit-cover {
+    object-fit: cover;
+}

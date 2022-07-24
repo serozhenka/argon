@@ -41,7 +41,7 @@ def post_add_page(request):
 
         for i in range(0, len(images)):
             post_img = PostImage.objects.create(post=post, image=images[i], order=i)
-            extension = post_img.image.url.split('.')[-1]
+            extension = post_img.image.url.split('.')[-1].lower()
 
             if settings.USE_S3:
                 bucket_object = get_bucket_object(post_img.image.url)

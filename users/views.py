@@ -77,7 +77,6 @@ def account_page(request, username):
             return redirect('post:feed')
 
         following_model_account = Following.objects.get(user=account)
-        followers_model_account = Followers.objects.get(user=account)
 
         if not request.user == account:
 
@@ -98,11 +97,7 @@ def account_page(request, username):
             context['is_followed'] = following_model_account.is_following(request.user)
 
         context['following_count'] = following_model_account.count()
-        context['followers_count'] = followers_model_account.count()
-
-        context['post_images'] = []
-        for image in PostImage.objects.filter(post__user=request.user, order=0):
-            context['post_images'].append([image, image.post.likes_count])
+        context['followers_count'] = Followers.objects.get(user=account).count()
 
         context["account"] = account
         context["posts_count"] = Post.objects.filter(user=account).count()

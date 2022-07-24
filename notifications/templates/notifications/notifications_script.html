@@ -190,7 +190,7 @@
 
     function userTextLink(notification) {
         return `
-            <a href="${notification.sender.url}" class="text-dark text-decoration-none">${notification.sender.username}</a>
+            <a href="${notification.sender.url}" class="text-dark text-decoration-none text-overflow d-inline-block fw-bold" style="max-width: 200px; vertical-align: top; text-overflow: clip!important">${notification.sender.username}</a>
         `
     }
 
@@ -205,7 +205,7 @@
     function createFollowNotificationBody(notification) {
         return `
             <div>
-                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                ${userTextLink(notification)} <span>${notification.message}.</span>
                 <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
             </div>
         `
@@ -214,7 +214,7 @@
     function createAcceptDeclinedFRNotificationBody(notification) {
         return `
             <div>
-                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                ${userTextLink(notification)} <span>${notification.message}.</span>
                 <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
             </div>
         `
@@ -223,7 +223,7 @@
     function createSendFRNotificationBody(notification) {
         return `
             <div>
-                <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                ${userTextLink(notification)} <span>${notification.message}.</span>
                 <div class="d-flex my-1">
                     <button type="button" class="btn btn-primary btn-sm me-2 accept" onclick="followingRequestAction('accept-request', '${notification.sender.username}', '${notification.id}')">Accept</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm decline" onclick="followingRequestAction('decline-request', '${notification.sender.username}', '${notification.id}')">Decline</button>
@@ -237,7 +237,7 @@
         return `
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                    ${userTextLink(notification)} <span>${notification.message}.</span>
                     <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
                 </div>
                 <a href="${notification.redirect_url}" style="width: 50px; height: 50px">
@@ -251,7 +251,7 @@
         return `
             <div class="d-flex justify-content-between align-items-center">
                 <div class="col-9">
-                    <span class="fw-bold">${userTextLink(notification)}</span> ${notification.message}.
+                    ${userTextLink(notification)} <span>${notification.message}.</span>
                     <div class="fs-12px text-muted mb-1">"${notification.comment.body}"</div>
                     <div class="fs-12px text-muted">${notification.natural_timestamp}</div>
                 </div>

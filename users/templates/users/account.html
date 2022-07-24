@@ -5,7 +5,7 @@
 
     <section class="mt-4">
         <div class="row mx-0">
-            <div class="col-lg-6 col-md-8 col-10 mx-auto" id="scroll-container">
+            <div class="col-lg-6 col-md-8 col-11 mx-auto" id="scroll-container">
                 <div class="row">
                     <div class="d-flex col-4 justify-content-center align-items-center">
                         <div class="col col-lg-8 col-md-10">
@@ -141,7 +141,7 @@
     </section>
 
     <script>
-        let limit = 12;
+        let limit = 18;
         let postContainer = document.getElementById('post-container')
         let observeContainer = document.getElementById('observe-container')
         let url = window.location.origin + "{% url 'api:api-post-list-by-user' username=account.username %}" + `?limit=${limit}&offset=0`
@@ -156,14 +156,14 @@
         function callback(entries) {
             for (const entry of entries) {
                 if (entry.isIntersecting) {
-                    getNextPage()
+                    getNextPage(entry)
                 }
             }
         }
 
         {% if is_following or request.user == account or account.is_public %} observer.observe(observeContainer) {% endif %}
 
-        function getNextPage() {
+        function getNextPage(entry) {
             fetch(url)
             .then(response => response.json())
             .then(data => {
