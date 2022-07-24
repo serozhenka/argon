@@ -62,6 +62,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
     objects = AccountManager()
 
+    class Meta:
+        indexes = [models.Index(fields=["username"])]
+
     def __str__(self) -> str:
         return self.email
 

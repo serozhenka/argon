@@ -5,7 +5,7 @@
 
     <section class="mt-4">
         <div class="row mx-0">
-            <div class="col-lg-6 col-md-8 col-10 mx-auto ">
+            <div class="col-lg-6 col-md-8 col-11 mx-auto ">
                 <a href="{% url 'account:account' username=account_username %}" class="d-flex justify-content-center btn btn-sm btn-outline-secondary px-3 mb-3 w-25 mx-auto disable-focus">Back</a>
                 <div class="custom-scrollbar scrollable-container box-shadow" id="followers-container" style="background-color: var(--light-gray-color)">
                 </div>
@@ -25,7 +25,6 @@
             fetch(url)
             .then(response => response.json())
             .then(data => {
-              console.log(data)
               url = data.next
               if (url && window.location.protocol === "https:") { url = url.replace("http:", "https:") }
               if (!url) { usersContainer.removeEventListener('scroll', scrollListener) }
@@ -44,12 +43,12 @@
                 <div class="col-1 me-3">
                     <img class="img-fluid rounded-circle position-relative top-50" src="{% static 'images/default.png' %}" alt="user-profile-image" id="${user.username}_image" style="transform: translateY(-50%);">
                 </div>
-                <div class="col-11 d-flex align-items-center justify-content-between">
-                    <div><span class="fw-bold">${user.username}</span><br/><span class="text-muted">${user.name}</span></div>
+                <div class="col-11 d-flex align-items-center justify-content-between pe-2">
+                    <div><span class="fw-bold text-overflow d-inline-block" style="max-width: 200px; vertical-align: top">${user.username}</span><br/><span class="text-muted">${user.name}</span></div>
                     <div>
                         ${`${is_following_by_request_user ?
                         `
-                        <button class="btn btn-outline-secondary btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" onclick="removeFollower(this, '${user.username}')">
+                        <button id="${user.username}_unfollow" class="btn btn-outline-secondary btm-sm fs-14px py-1 px-2 me-2 disable-focus" type="button" data-username="${user.username}">
                             Unfollow
                         </button>` : ``} `}
                     </div>
@@ -57,6 +56,9 @@
             `
             usersContainer.appendChild(div)
             preLoadImage(user.image, `${user.username}_image`)
+
+            let unfollowBtn = document.getElementById(`${user.username}_unfollow`)
+            unfollowBtn?.addEventListener('click', unfollowUser, true)
           })
         }
 
@@ -66,7 +68,11 @@
             }
         }
 
-        function removeFollower(target, username) {
+        function unfollowUser(e) {
+          e.stopPropagation()
+          e.preventDefault()
+          e.target.removeEventListener('click', unfollowUser)
+          let username = e.target.dataset.username
           $.ajax({
             type: "POST",
             dataType: "json",
@@ -77,12 +83,9 @@
             url: "{% url 'follow:follow-action' username=123456789 %}".replace(123456789, username),
             timeout: 5 * 1000,
             success: function(data) {
-              if (data.response_result === "success") {
-                target.onclick = ""
-                target.classList.remove('btn-outline-secondary')
-                target.classList.add('btn-outline-danger')
-                target.innerText = "Unfollowed"
-              } else if (data.response_result === "error") { console.log(data) }
+                if (data.response_result === "success") {
+                    e.target.remove()
+                } else if (data.response_result === "error") { console.log(data) }
             }
            })
         }

@@ -20,7 +20,7 @@ class FollowersApiView(generics.ListAPIView):
             user = Account.objects.get(username=self.kwargs.get('username'))
         except Account.DoesNotExist:
             raise Http404
-        return Followers.objects.get(user=user).users_followers.all()
+        return Followers.objects.get(user=user).users_followers.all().prefetch_related('users_followers')
 
 
 class FollowingApiView(generics.ListAPIView):
@@ -32,7 +32,7 @@ class FollowingApiView(generics.ListAPIView):
             user = Account.objects.get(username=self.kwargs.get('username'))
         except Account.DoesNotExist:
             raise Http404
-        return Following.objects.get(user=user).users_following.all()
+        return Following.objects.get(user=user).users_following.all().prefetch_related('users_following')
 
 
 class PostUserApiView(generics.ListAPIView):
@@ -45,7 +45,7 @@ class PostUserApiView(generics.ListAPIView):
             user = Account.objects.get(username=self.kwargs.get('username'))
         except Account.DoesNotExist:
             raise Http404
-        return Post.objects.filter(user=user).order_by('-created')
+        return Post.objects.filter(user=user).prefetch_related('post_images').select_related('user').order_by('-created')
 
 
 class PostApiView(generics.ListAPIView):
@@ -54,7 +54,7 @@ class PostApiView(generics.ListAPIView):
 
     def get_queryset(self):
         following_users = Following.objects.get(user=self.request.user).users_following.all()
-        return Post.objects.filter(user__in=following_users).order_by('-created')
+        return Post.objects.filter(user__in=following_users).prefetch_related('post_images').select_related('user').order_by('-created')
 
 
 class PostCommentsApiView(generics.ListAPIView):
@@ -72,7 +72,7 @@ class PostCommentsApiView(generics.ListAPIView):
         return Comment.objects.filter(post=post).annotate(by_user=ExpressionWrapper(
             Q(user=user),
             output_field=BooleanField()
-        )).order_by('-by_user', '-created')
+        )).select_related('user').order_by('-by_user', '-created')
 
 
 class ChatRoomsApiView(generics.ListAPIView):
