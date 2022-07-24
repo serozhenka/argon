@@ -12,10 +12,15 @@ from chat.exceptions import ClientError
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
+    def __init__(self, *args, **kwargs):
+        self.group_name = None
+        super().__init__(*args, **kwargs)
+
     async def connect(self) -> None:
         """Called when client instantiates a handshake."""
         await self.accept()
-        await self.channel_layer.group_add(f"notifications_{self.scope['user'].username}", self.channel_name)
+        self.group_name = f"notifications_{self.scope['user'].username}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
 
     async def receive_json(self, content, **kwargs):
         """Called when client sends a text frame."""
@@ -34,11 +39,17 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         elif command == "notifications_count":
             count = await self.get_unread_notifications_count()
-            await self.notification_send_count(count)
+            await self.channel_layer.group_send(self.group_name, {
+                'type': 'notification.send_count',
+                'count': count,
+            })
 
         elif command == "messages_notifications_count":
             count = await self.get_unread_messages_notifications_count()
-            await self.messages_notification_send_count(count)
+            await self.channel_layer.group_send(self.group_name, {
+                'type': 'messages_notification.send_count',
+                'count': count,
+            })
 
         elif command == "read_notification":
             notification_id = content.get('notification_id')
@@ -71,10 +82,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             'notifications_to_delete_id_list': event.get('notifications_to_delete_id_list'),
         })
 
-    async def notification_send_count(self, count):
+    async def notification_send_count(self, event):
         await self.send_json({
             'msg_type': NotificationType.NOTIFICATIONS_COUNT,
-            'count': count,
+            'count': event.get('count'),
         })
 
     async def notification_send_read(self, notification_id):
@@ -96,10 +107,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             'notifications': event.get('notification'),
         })
 
-    async def messages_notification_send_count(self, count):
+    async def messages_notification_send_count(self, event):
         await self.send_json({
             'msg_type': NotificationType.MESSAGES_NOTIFICATIONS_COUNT,
-            'count': count,
+            'count': event.get('count'),
         })
 
     async def notification_room_empty(self, event):
