@@ -161,3 +161,6 @@ cython_debug/
 media/
 
 staticfiles/
+
+# Compress earlier uploaded S3 images
+compress_images_script.py

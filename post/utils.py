@@ -4,6 +4,8 @@ import numpy as np
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import ContentType
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
 from PIL import Image
 
@@ -92,3 +94,31 @@ def write_image_to_bucket(bucket_object, image_array, extension, exif):
     img = Image.fromarray(image_array)
     img.save(file_stream, exif=exif if exif else b'', format=extension)
     bucket_object.put(Body=file_stream.getvalue(), ContentType=f"image/{extension}")
+
+
+def compress_image_from_tempfile(img_tmp):
+    filename = img_tmp.name
+    ext = filename.split('.')[-1].lower()
+    if ext == "jpg":
+        ext = "jpeg"
+
+    img = Image.open(img_tmp)
+
+    exif = img.info.get('exif')
+    width, height = img.size
+
+    if height / width > 1.5:  # 3 / 2
+        img = img.crop((0, int(height / 2 - 0.75 * width), width, int(height / 2 + 0.75 * width)))
+    elif height / width < 0.67:  # 2 / 3
+        img = img.crop((int(width / 2 - 0.75 * height), 0, int(width / 2 + 0.75 * height), height))
+
+    width, height = img.size
+
+    if max(width, height) > 1400:
+        scale_percent = (1400 / max(width, height)) * 100  # percent of original size
+        new_dimensions = (int(d * scale_percent / 100) for d in (width, height))
+        img = img.resize(new_dimensions, Image.ANTIALIAS)
+
+    out = BytesIO()
+    img.save(out, format=ext, exif=exif if exif else b'', optimize=True)
+    return InMemoryUploadedFile(ContentFile(out.getvalue()), None, filename, 'image/jpeg', img.tell, None)

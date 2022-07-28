@@ -1,4 +1,3 @@
-import cv2
 import json
 
 from django.shortcuts import render
@@ -12,13 +11,8 @@ from .models import Post, PostImage, PostLike, Comment, CommentLike
 from .utils import (
     is_post_liked_by_user,
     private_account_action_permission,
-
-    get_bucket_object,
-    read_image_from_bucket,
-    compress_image,
-    write_image_to_bucket,
+    compress_image_from_tempfile,
 )
-
 
 @login_required(login_url=reverse_lazy('account:login'))
 def feed_page(request):
@@ -35,34 +29,15 @@ def post_add_page(request):
 
     elif request.method == "POST":
         images = request.FILES.getlist('images')
-        if not images: return redirect('post:feed')
+        if not images:
+            return redirect('post:feed')
+
         description = request.POST.get('description')
         post = Post.objects.create(user=request.user, description=description)
 
         for i in range(0, len(images)):
-            post_img = PostImage.objects.create(post=post, image=images[i], order=i)
-            extension = post_img.image.url.split('.')[-1].lower()
-
-            if settings.USE_S3:
-                bucket_object = get_bucket_object(post_img.image.url)
-                img, dimensions, exif = read_image_from_bucket(bucket_object)
-                width, height = dimensions
-            else:
-                absolute_url = str(settings.BASE_DIR) + post_img.image.url
-                img = cv2.imread(absolute_url)
-                width, height = int(img.shape[1]), int(img.shape[0])
-
-            if height / width > 1.5:  # 3 / 2
-                img = img[int(height/2 - 0.75*width):int(height/2 + 0.75*width), 0:width]
-            elif height / width < 0.67:  # 2 / 3
-                img = img[0:height, int(width/2 - 0.75*height):int(width/2 + 0.75*height)]
-
-            img = compress_image(img, extension)
-
-            if settings.USE_S3:
-                write_image_to_bucket(bucket_object, img, extension, exif)
-            else:
-                cv2.imwrite(absolute_url, img)
+            image_file = compress_image_from_tempfile(images[i])
+            PostImage.objects.create(post=post, image=image_file, order=i)
 
         return redirect('account:account', request.user.username)
 

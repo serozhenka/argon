@@ -197,7 +197,7 @@ def crop_image(request, username):
 
             if max_size := int(request.POST.get('max_image_x_dimension')):
                 if cropped_image.shape[0] > max_size:
-                    cropped_image = cv2.resize(cropped_image, (300, 300))
+                    cropped_image = cv2.resize(cropped_image, (300, 300), interpolation=cv2.INTER_AREA)
 
             cv2.imwrite(url, cropped_image)
 

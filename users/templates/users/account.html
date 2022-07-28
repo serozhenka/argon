@@ -179,7 +179,7 @@
             let div = document.createElement('a')
             div.classList.add('col-4', 'mt-1', 'text-decoration-none')
             div.style.position = 'relative'
-            div.target = "blank"
+            div.target = "_blank"
             div.href = "{% url 'post:post-page' post_id=123456789 %}".replace(123456789, `${post.id}`)
 
             div.innerHTML += `
