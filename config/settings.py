@@ -163,6 +163,7 @@ AUTH_USER_MODEL = 'users.Account'
 DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 DEFAULT_POST_IMAGE_FILEPATH = 'post_images/'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
+POST_COMPRESSED_IMAGE_SIZE = 1400
 
 if DEBUG:
     BASE_URL = "http://localhost:8000"
@@ -214,4 +215,5 @@ CSRF_TRUSTED_ORIGINS = [
     "http://argon-social.herokuapp.com",
     'https://www.argon-social.com',
     'http://www.argon-social.com',
+    'https://argon-social.com',
 ]

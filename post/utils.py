@@ -114,8 +114,8 @@ def compress_image_from_tempfile(img_tmp):
 
     width, height = img.size
 
-    if max(width, height) > 1400:
-        scale_percent = (1400 / max(width, height)) * 100  # percent of original size
+    if max(width, height) > settings.POST_COMPRESSED_IMAGE_SIZE:
+        scale_percent = (settings.POST_COMPRESSED_IMAGE_SIZE / max(width, height)) * 100  # percent of original size
         new_dimensions = (int(d * scale_percent / 100) for d in (width, height))
         img = img.resize(new_dimensions, Image.ANTIALIAS)
 
