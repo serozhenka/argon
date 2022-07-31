@@ -45,7 +45,12 @@ class PostUserApiView(generics.ListAPIView):
             user = Account.objects.get(username=self.kwargs.get('username'))
         except Account.DoesNotExist:
             raise Http404
-        return Post.objects.filter(user=user).prefetch_related('post_images').select_related('user').order_by('-created')
+        return (
+            Post.objects.filter(user=user, is_posted=True)
+            .prefetch_related('post_images')
+            .select_related('user')
+            .order_by('-created')
+        )
 
 
 class PostApiView(generics.ListAPIView):
@@ -54,7 +59,12 @@ class PostApiView(generics.ListAPIView):
 
     def get_queryset(self):
         following_users = Following.objects.get(user=self.request.user).users_following.all()
-        return Post.objects.filter(user__in=following_users).prefetch_related('post_images').select_related('user').order_by('-created')
+        return (
+            Post.objects.filter(user__in=following_users, is_posted=True)
+            .prefetch_related('post_images')
+            .select_related('user')
+            .order_by('-created')
+        )
 
 
 class PostCommentsApiView(generics.ListAPIView):

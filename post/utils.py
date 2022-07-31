@@ -1,3 +1,4 @@
+import base64
 import boto3
 import cv2
 import numpy as np
@@ -9,7 +10,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
 from PIL import Image
 
-from .models import PostLike, Post
+from .models import PostLike
 from notifications.models import Notification
 
 def is_post_liked_by_user(user, post):
@@ -95,15 +96,29 @@ def write_image_to_bucket(bucket_object, image_array, extension, exif):
     img.save(file_stream, exif=exif if exif else b'', format=extension)
     bucket_object.put(Body=file_stream.getvalue(), ContentType=f"image/{extension}")
 
-
-def compress_image_from_tempfile(img_tmp):
-    filename = img_tmp.name
+def get_image_ext(filename):
     ext = filename.split('.')[-1].lower()
-    if ext == "jpg":
-        ext = "jpeg"
+    ext = "jpeg" if ext == "jpg" else ext
+    return ext
 
-    img = Image.open(img_tmp)
+def tempfile_image_to_pil(img_tmp):
+    """
+    Converts tempfile image from POST request to PIL Image.
+    Accepts tempfile image. Returns tuple - (PIL image, filename, extension)
+    """
+    filename = img_tmp.name
+    return Image.open(img_tmp), filename, get_image_ext(filename)
+    
 
+def compress_pil_image(img, filename):
+    """
+        Resizes* and compresses PIL image.
+        Returns InMemoryUploadedFile instance which
+        can be then passed to models.ImageField.
+
+        * - if dimensions are to wide (high)
+    """
+    ext = get_image_ext(filename)
     exif = img.info.get('exif')
     width, height = img.size
 
@@ -122,3 +137,9 @@ def compress_image_from_tempfile(img_tmp):
     out = BytesIO()
     img.save(out, format=ext, exif=exif if exif else b'', optimize=True)
     return InMemoryUploadedFile(ContentFile(out.getvalue()), None, filename, 'image/jpeg', img.tell, None)
+
+def encode_image_to_base64_string(image):
+    return base64.b64encode(image).decode("utf-8")
+
+def decode_image_from_base64_string(base64str):
+    return base64.b64decode(base64str.encode("utf-8"))

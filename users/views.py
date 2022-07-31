@@ -100,7 +100,7 @@ def account_page(request, username):
         context['followers_count'] = Followers.objects.get(user=account).count()
 
         context["account"] = account
-        context["posts_count"] = Post.objects.filter(user=account).count()
+        context["posts_count"] = Post.objects.filter(user=account, is_posted=True).count()
         return render(request, 'users/account.html', context=context)
 
 @login_required(login_url=reverse_lazy('account:login'))

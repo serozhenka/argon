@@ -33,7 +33,7 @@
 
 
                     <div class="d-grid gap-2 mx-auto" style="max-width: 350px">
-                      <button type="submit" class="btn btn-primary disable-focus" id="submit-button">Submit</button>
+                      <button type="submit" class="btn btn-primary disable-focus" id="submit-button" disabled>Submit</button>
                     </div>
                 </form>
             </div>
@@ -64,7 +64,6 @@
         }
 
         if (input.files.length > 0) {
-            console.log(input.files)
             for (let i = 0; i < input.files.length; i++) {
                 if (!isImageSizeValid(input.files[i])) {
                     alert("One of uploaded images exceeds the maximum uploading file size of 10 MB")
@@ -91,6 +90,7 @@
                       <img src="${image}" class="d-block w-100" alt="" id="carousel_image_${i}">
                     </div>
                 `
+                if (i === (input.files.length - 1)) { submitButton.removeAttribute("disabled") }
               }
 
               fileReader.readAsDataURL(input.files[i])

@@ -1,5 +1,6 @@
 import json
 
+from celery import group
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -7,11 +8,12 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
-from .models import Post, PostImage, PostLike, Comment, CommentLike
+from .models import Post, PostLike, Comment, CommentLike
+from .tasks import process_new_post_image, post_make_posted
 from .utils import (
     is_post_liked_by_user,
     private_account_action_permission,
-    compress_image_from_tempfile,
+    encode_image_to_base64_string,
 )
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -35,9 +37,16 @@ def post_add_page(request):
         description = request.POST.get('description')
         post = Post.objects.create(user=request.user, description=description)
 
-        for i in range(0, len(images)):
-            image_file = compress_image_from_tempfile(images[i])
-            PostImage.objects.create(post=post, image=image_file, order=i)
+        posts_group = group(
+            process_new_post_image.si(
+                b64image=encode_image_to_base64_string(images[i].read()),
+                filename=images[i].name,
+                post_id=post.id,
+                img_order=i,
+            ) for i in range(0, len(images))
+        )
+        posts_group.link(post_make_posted.si(post.id))
+        posts_group()
 
         return redirect('account:account', request.user.username)
 

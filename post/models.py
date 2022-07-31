@@ -1,6 +1,3 @@
-import django
-# django.setup()
-
 from datetime import datetime, timedelta
 from django.db import models
 from django.conf import settings
@@ -21,6 +18,7 @@ class Post(models.Model):
     description: str = models.CharField(max_length=164, blank=True)
     created: datetime = models.DateTimeField(auto_now_add=True)
     is_edited: bool = models.BooleanField(default=False)
+    is_posted: bool = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)
