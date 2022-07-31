@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'algoliasearch_django',
     'channels',
     'storages',
+    'django_celery_results',
+    'djcelery_email',
 
     # internal apps
     'users.apps.UsersConfig',
@@ -174,12 +176,14 @@ TEMP = os.path.join(BASE_DIR, 'media/profile_images/temp')
 
 
 # Email backend configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+
+EMAIL_BACKEND = 'djcelery_email.backends.CeleryEmailBackend'
+EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
 
 # Django Rest Framework configuration
@@ -217,3 +221,10 @@ CSRF_TRUSTED_ORIGINS = [
     'http://www.argon-social.com',
     'https://argon-social.com',
 ]
+
+# Celery configuration
+
+CELERY_BROKER_URL = config('REDIS_URL')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_EXTENDED = True
+CELERY_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
