@@ -136,6 +136,7 @@ def compress_pil_image(img, filename):
 
     out = BytesIO()
     img.save(out, format=ext, exif=exif if exif else b'', optimize=True)
+
     return InMemoryUploadedFile(ContentFile(out.getvalue()), None, filename, 'image/jpeg', img.tell, None)
 
 def encode_image_to_base64_string(image):

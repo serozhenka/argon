@@ -1,6 +1,8 @@
 import json
+import os
 
-from celery import group
+from django.core.files import File
+from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -9,11 +11,10 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
 from .models import Post, PostLike, Comment, CommentLike
-from .tasks import process_new_post_image, post_make_posted
+from .tasks import process_new_post_images, post_make_posted
 from .utils import (
     is_post_liked_by_user,
     private_account_action_permission,
-    encode_image_to_base64_string,
 )
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -37,16 +38,22 @@ def post_add_page(request):
         description = request.POST.get('description')
         post = Post.objects.create(user=request.user, description=description)
 
-        posts_group = group(
-            process_new_post_image.si(
-                b64image=encode_image_to_base64_string(images[i].read()),
-                filename=images[i].name,
-                post_id=post.id,
-                img_order=i,
-            ) for i in range(0, len(images))
+        filenames = []
+
+        for i in range(len(images)):
+            storage = FileSystemStorage(settings.POST_IMAGE_TEMP)
+            current = images[i]
+            current.name = storage.get_available_name(current)
+            storage.save(current.name, File(current))
+            filenames.append((os.path.join(settings.POST_IMAGE_TEMP, current.name), current.name))
+
+        process_new_post_images.apply_async(
+            kwargs={
+                'filenames': filenames,
+                'post_id': post.id
+            },
+            link=post_make_posted.si(post.id),
         )
-        posts_group.link(post_make_posted.si(post.id))
-        posts_group()
 
         return redirect('account:account', request.user.username)
 

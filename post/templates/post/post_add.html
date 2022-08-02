@@ -51,7 +51,7 @@
     let submitButton = document.getElementById("submit-button")
 
     function isImageSizeValid(image) {
-        return image.size <= Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}");
+        return image.size < Number("{{ DATA_UPLOAD_MAX_MEMORY_SIZE }}");
     }
 
     enableUploadNewContainerOverlay()

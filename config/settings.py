@@ -153,6 +153,7 @@ else:
     MEDIA_ROOT = BASE_DIR / 'media/'
 
 STATICFILES_DIRS = [BASE_DIR / 'static/', ]
+POST_IMAGE_TEMP = BASE_DIR / 'static/tmp/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -164,7 +165,7 @@ AUTH_USER_MODEL = 'users.Account'
 
 DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 DEFAULT_POST_IMAGE_FILEPATH = 'post_images/'
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 15
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
 POST_COMPRESSED_IMAGE_SIZE = 1400
 
 if DEBUG:
@@ -228,3 +229,4 @@ CELERY_BROKER_URL = config('REDIS_URL')
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
 CELERY_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
