@@ -153,7 +153,8 @@ else:
     MEDIA_ROOT = BASE_DIR / 'media/'
 
 STATICFILES_DIRS = [BASE_DIR / 'static/', ]
-POST_IMAGE_TEMP = BASE_DIR / 'static/tmp/'
+
+POST_IMAGE_TEMP = 'static/tmp/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

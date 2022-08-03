@@ -84,4 +84,3 @@ class CommentLike(models.Model):
     user: Account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     comment: Comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
     is_liked: bool = models.BooleanField(default=True)
-

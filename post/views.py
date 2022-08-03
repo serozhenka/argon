@@ -1,6 +1,9 @@
 import json
 import os
+import threading
+import time
 
+from PIL import Image
 from django.core.files import File
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
@@ -15,6 +18,9 @@ from .tasks import process_new_post_images, post_make_posted
 from .utils import (
     is_post_liked_by_user,
     private_account_action_permission,
+
+    get_s3_client,
+    put_new_image_to_s3,
 )
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -38,21 +44,25 @@ def post_add_page(request):
         description = request.POST.get('description')
         post = Post.objects.create(user=request.user, description=description)
 
-        filenames = []
+        s3_client = get_s3_client()
+        threads, pkeys = [], []
 
         for i in range(len(images)):
-            storage = FileSystemStorage(settings.POST_IMAGE_TEMP)
-            current = images[i]
-            current.name = storage.get_available_name(current)
-            storage.save(current.name, File(current))
-            filenames.append((os.path.join(settings.POST_IMAGE_TEMP, current.name), current.name))
+            threads.append(threading.Thread(
+                target=put_new_image_to_s3,
+                args=(s3_client, images[i], pkeys))
+            )
+            threads[i].start()
+
+        for i in range(len(images)):
+            threads[i].join()
 
         process_new_post_images.apply_async(
             kwargs={
-                'filenames': filenames,
+                'pkeys': pkeys,
                 'post_id': post.id
             },
-            link=post_make_posted.si(post.id),
+            link=post_make_posted.si(post.id)
         )
 
         return redirect('account:account', request.user.username)
