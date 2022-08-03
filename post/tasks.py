@@ -1,6 +1,8 @@
 from celery import shared_task
+from celery_progress.backend import ProgressRecorder
 from django.apps import apps
 
+from .models import PostCreateTask
 from .utils import (
     compress_pil_image,
     get_s3_resource,
@@ -10,14 +12,15 @@ from .utils import (
 )
 
 
-@shared_task
-def process_new_post_images(pkeys, post_id):
+@shared_task(bind=True)
+def process_new_post_images(self, pkeys, post_id):
     """
         Arguments:
             - filename: tuple[tuple[absolute_url, relative_url]]
             - post_id: int
         Task to compress image on the background and then remove them
     """
+    progress_recorder = ProgressRecorder(self)
     s3_resource = get_s3_resource()
 
     for i in range(len(pkeys)):
@@ -28,6 +31,7 @@ def process_new_post_images(pkeys, post_id):
             image=compress_pil_image(pil_image, pkeys[i]),
             order=i
         )
+        progress_recorder.set_progress((i + 1) / len(pkeys) * 100, 100)
 
         try:
             bucket_delete_object(s3_resource, get_image_key(pkeys[i]))
@@ -35,6 +39,9 @@ def process_new_post_images(pkeys, post_id):
             pass
 
         del pil_image, PostImage
+
+    PostCreateTask.objects.filter(task_id=self.request.id).delete()
+    return self.request.id
 
 
 @shared_task

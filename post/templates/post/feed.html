@@ -7,6 +7,41 @@
         <div class="row mx-0">
             <div class="col-xl-4 col-lg-5 col-md-7 col-sm-9 col-11 mx-auto">
 
+                {% for task in tasks %}
+                    <div class='progress-wrapper d-flex align-items-center mb-2' id="{{ task }}" style="background-color: #d7d7d7">
+                        <div class="me-2">
+                            <img src="{% static 'images/the_post.jpg' %}" alt="" style="width: 40px;">
+                        </div>
+                        <div class="position-relative flex-grow-1 mx-2" style="height: 10px">
+                            <div id='progress-bar-{{ task }}' class='progress-bar position-absolute rounded h-100' style="background-color: #68a9ef; width: 0; z-index: 111; transition: all .5s;">&nbsp;</div>
+                            <div class='progress-bar position-absolute rounded w-100 h-100' style="background-color: var(--gray-color);">&nbsp;</div>
+                        </div>
+                    </div>
+                    <div id="progress-bar-message-{{ task }}" class="d-none">Waiting for progress to start...</div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function () {
+                            let progressUrl = "{% url 'celery_progress:task_status' task %}";
+                            CeleryProgressBar.initProgressBar(progressUrl, {
+                                onSuccess: onSuccess,
+                                progressBarId: "progress-bar-{{ task }}",
+                                progressBarMessageId: "progress-bar-message-{{ task }}",
+                            });
+                        });
+
+                        function onSuccess(progressBarElement, progressBarMessageElement, result) {
+                            this.onSuccessDefault(progressBarElement, progressBarMessageElement, result)
+                            setTimeout(function() {
+                                $(`#${result}`).fadeOut(700, function() {
+                                    $(this).remove()
+                                })
+                            }, 3000)
+
+                        }
+                    </script>
+
+                {% endfor %}
+
                 <div class="mx-auto mt-3" id="post-container"></div>
             </div>
             <div id="observe-container" class="d-block py-3"></div>
@@ -261,4 +296,6 @@
         }
 
     </script>
+
+    <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 {% endblock content %}

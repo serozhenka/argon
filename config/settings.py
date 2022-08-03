@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'storages',
     'django_celery_results',
     'djcelery_email',
+    'celery_progress',
 
     # internal apps
     'users.apps.UsersConfig',

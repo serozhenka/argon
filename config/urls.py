@@ -12,9 +12,10 @@ urlpatterns = [
     path('follow/', include('follow.urls')),
     path('api/', include('api.urls')),
     path('chat/', include('chat.urls')),
-
     path('', include('post.urls')),
     path('user-search/', users_views.user_search_page, name='user-search'),
+
+    path('celery-progress/', include('celery_progress.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

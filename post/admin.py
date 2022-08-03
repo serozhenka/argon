@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post, PostImage, PostLike, CommentLike, Comment
+from .models import Post, PostImage, PostLike, CommentLike, Comment, PostCreateTask
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -34,8 +34,14 @@ class CommentLikeAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'user__username', 'comment__id')
 
 
+class PostCreateTaskAdmin(admin.ModelAdmin):
+    class Meta:
+        model = PostCreateTask
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(PostImage, PostImageAdmin)
 admin.site.register(PostLike, PostLikeAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(CommentLike, CommentLikeAdmin)
+admin.site.register(PostCreateTask, PostCreateTaskAdmin)

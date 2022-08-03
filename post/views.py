@@ -1,11 +1,6 @@
 import json
-import os
 import threading
-import time
 
-from PIL import Image
-from django.core.files import File
-from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -13,7 +8,7 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
-from .models import Post, PostLike, Comment, CommentLike
+from .models import Post, PostLike, Comment, CommentLike, PostCreateTask
 from .tasks import process_new_post_images, post_make_posted
 from .utils import (
     is_post_liked_by_user,
@@ -25,7 +20,8 @@ from .utils import (
 
 @login_required(login_url=reverse_lazy('account:login'))
 def feed_page(request):
-    return render(request, 'post/feed.html')
+    running_tasks = PostCreateTask.objects.filter(user=request.user).values_list('task_id', flat=True)
+    return render(request, 'post/feed.html', {'tasks': running_tasks})
 
 
 @login_required(login_url=reverse_lazy('account:login'))
@@ -57,7 +53,7 @@ def post_add_page(request):
         for i in range(len(images)):
             threads[i].join()
 
-        process_new_post_images.apply_async(
+        result = process_new_post_images.apply_async(
             kwargs={
                 'pkeys': pkeys,
                 'post_id': post.id
@@ -65,7 +61,8 @@ def post_add_page(request):
             link=post_make_posted.si(post.id)
         )
 
-        return redirect('account:account', request.user.username)
+        PostCreateTask.objects.create(user=request.user, task_id=result.task_id)
+        return redirect('post:feed')
 
 
 @login_required(login_url=reverse_lazy('account:login'))
