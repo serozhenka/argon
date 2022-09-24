@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_templatetags %}
+{% load custom_tags %}
 
 {% block content %}
 
@@ -163,8 +163,8 @@
 
     <script>
         {% for i in '123'|make_list %}
-            console.log("{{ 'images/auth-page-photo-'|addstr:forloop.counter }}")
-            preLoadImage("{% static 'images/auth-page-photo-'|addstr:forloop.counter|addstr:'.jpg' %}", 'carouselImage_{{ forloop.counter }}')
+            console.log("{{ 'images/auth-page-photo-'|add_str:forloop.counter }}")
+            preLoadImage("{% static 'images/auth-page-photo-'|add_str:forloop.counter|add_str:'.jpg' %}", 'carouselImage_{{ forloop.counter }}')
         {% endfor %}
 
         let labels = document.querySelectorAll('.form-label')

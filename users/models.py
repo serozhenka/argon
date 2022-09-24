@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 
+
 def get_profile_image_path(instance: 'Account', filename: str) -> str:
     return f'profile_images/{str(instance.pk)}_{filename}'
 
@@ -11,7 +12,7 @@ class AccountManager(BaseUserManager):
     """Account model manager to handle user/superuser objects creation."""
 
     def create_user(self, email: str, username: str, password: str, **kwargs) -> 'Account':
-        """Creating basic user and returning it."""
+        """Creating basic user and return it."""
 
         if not email:
             raise ValueError('User should have valid email address')
@@ -25,11 +26,9 @@ class AccountManager(BaseUserManager):
         return user
 
     def create_superuser(self, email: str, username: str, password: str, **kwargs) -> 'Account':
-        """Creating superuser and returning it."""
+        """Creating superuser and return it."""
 
-        user = self.create_user(email, username, password, **kwargs)
-        user.is_staff = True
-        user.is_superuser = True
+        user = self.create_user(email, username, password, is_staff=True, is_superuser=True, **kwargs)
         user.save(using=self._db)
         return user
 

@@ -1,23 +1,13 @@
-import os
 import base64
+import cv2
+import os
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from typing import Optional
 
-from .models import Account
 
 TEMP_PROFILE_IMAGE_NAME = "temp_profile_image.png"
 
-def user_exists_and_is_account_owner(request, username) -> (Optional[Account], bool):
-    try:
-        account = Account.objects.get(username=username)
-    except Account.DoesNotExist:
-        return None, False
-    if account != request.user:
-        return None, False
-
-    return account, True
 
 def save_temp_profile_image_from_base64String(image_string, user):
     INCORRECT_PADDING_EXCEPTION = "Incorrect padding"
@@ -45,3 +35,14 @@ def save_temp_profile_image_from_base64String(image_string, user):
             return save_temp_profile_image_from_base64String(image_string, user)
 
     return None
+
+def crop_image_from_url(url, x, y, width, height, max_dimension):
+    img = cv2.imread(url)
+    x = 0 if x < 0 else x
+    y = 0 if y < 0 else y
+    cropped_image = img[y:(y + height), x:(x + width)]
+
+    if cropped_image.shape[0] > max_dimension:
+        cropped_image = cv2.resize(cropped_image, (300, 300), interpolation=cv2.INTER_AREA)
+
+    cv2.imwrite(url, cropped_image)

@@ -1,5 +1,5 @@
 <nav class="nav dashboard-sidebar text-center text-md-start">
-  <a class="nav-link flex-grow-1 {% if page_name == "edit_profile" %}active{% endif %}" aria-current="page" href="{% url 'account:account-edit' username=request.user.username %}">Edit profile</a>
+  <a class="nav-link flex-grow-1 {% if page_name == "edit_profile" %}active{% endif %}" aria-current="page" href="{% url 'account:account-edit' %}">Edit profile</a>
   <a class="nav-link flex-grow-1 {% if page_name == "password_change" %}active{% endif %}" href="{% url 'account:password_change' %}">Change password</a>
-  <a class="nav-link flex-grow-1 {% if page_name == "privacy_and_security" %}active{% endif %}" href="{% url 'account:privacy-security' username=request.user.username %}">Privacy & Security</a>
+  <a class="nav-link flex-grow-1 {% if page_name == "privacy_and_security" %}active{% endif %}" href="{% url 'account:privacy-security' %}">Privacy & Security</a>
 </nav>

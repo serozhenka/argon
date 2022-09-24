@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
-from users import views as users_views
+from users.views import UserSearchView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,7 +13,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('chat/', include('chat.urls')),
     path('', include('post.urls')),
-    path('user-search/', users_views.user_search_page, name='user-search'),
+    path('search/', UserSearchView.as_view(), name='user-search'),
 
     path('celery-progress/', include('celery_progress.urls')),
 ]

@@ -1,56 +1,29 @@
-from django.contrib.auth import views as auth_views
-from django.urls import path, reverse_lazy
+from django.urls import path, re_path
 
 from . import views
+from .password_urls import urls as password_urls
 
 app_name = 'account'
 
 urlpatterns = [
-    path('login/', views.login_page, name='login'),
-    path('logout/', views.logout_page, name='logout'),
-    path('register/', views.register_page, name='register'),
+    path('login/', views.LoginPageView.as_view(), name='login'),
+    path('register/', views.RegisterPageView.as_view(), name='register'),
+    path('logout/', views.LogoutPageView.as_view(), name='logout'),
 
-    # Password change feature
-    path('password_change/', auth_views.PasswordChangeView.as_view(
-        template_name='password_reset/password_change.html',
-        success_url=reverse_lazy('account:password_change_done'),
-        extra_context={'page_name': views.DashboardPages.PASSWORD},
-    ), name='password_change'),
-    path('password_change_done/', auth_views.PasswordChangeDoneView.as_view(
-        template_name='password_reset/password_change_done.html'
-    ), name='password_change_done'),
-    # End of password change feature
+    *password_urls,
 
-    # Password reset feature
-    path('password_reset/', auth_views.PasswordResetView.as_view(
-        template_name='password_reset/password_reset_form.html',
-        subject_template_name='password_reset/password_reset_subject.txt',
-        email_template_name='password_reset/password_reset_email.html',
-        html_email_template_name='password_reset/password_reset_email.html',
-        success_url=reverse_lazy('account:password_reset_done'),
-    ), name='password_reset'),
-    path('password_reset_done/', auth_views.PasswordResetDoneView.as_view(
-        template_name='password_reset/password_reset_done.html'
-    ), name='password_reset_done'),
-    path('password_reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-        template_name='password_reset/password_reset_confirm.html',
-        success_url=reverse_lazy('account:password_reset_complete'),
-    ), name='password_reset_confirm'),
-    path('password_reset_complete/', auth_views.PasswordResetCompleteView.as_view(
-        template_name='password_reset/password_reset_complete.html'
-    ), name='password_reset_complete'),
-    # End of password reset feature
-
-    path('<str:username>/', views.account_page, name='account'),
-    path('<str:username>/edit/', views.account_edit_page, name='account-edit'),
-    path('<str:username>/edit/crop-image/', views.crop_image, name='crop-image'),
-
-    path('<str:username>/edit/privacy-security/', views.privacy_and_security_page, name='privacy-security'),
+    path('edit/account', views.AccountEditPageView.as_view(), name='account-edit'),
+    path('edit/privacy-security/', views.AccountPrivacySecurityView.as_view(), name='privacy-security'),
     path(
-        '<str:username>/edit/privacy-security/status-change/',
-        views.change_user_privacy_status, name='privacy-security-status-change',
+        'edit/privacy-security/status-change/',
+        views.ChangeUserPrivacyStatusView.as_view(), name='privacy-security-status-change',
     ),
+    path('edit/crop-image/', views.CropImageView.as_view(), name='crop-image'),
 
-    path('<str:username>/followers/', views.account_followers, name='account-followers'),
-    path('<str:username>/followings/', views.account_followings, name='account-following'),
+    path('<str:username>/', views.AccountPageView.as_view(), name='account'),
+
+    path('<str:username>/followers/', views.AccountFollowersView.as_view(), name='account-followers'),
+    path('<str:username>/followings/', views.AccountFollowingsView.as_view(), name='account-following'),
+
+    re_path(r'^$', views.LoginPageView.as_view()),
 ]

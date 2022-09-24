@@ -8,8 +8,7 @@ class TestUserForms(TestCase):
 
     def setUp(self) -> None:
         self.pwd = '21b4f6bcb67f57ce9487cfbd0eb91265'
-        self.user = baker.make(Account)
-        self.user2 = baker.make(Account)
+        self.user = baker.make(Account, username="maria")
         self.user.set_password(self.pwd)
         self.user.save()
 
@@ -67,7 +66,7 @@ class TestUserForms(TestCase):
 
     def test_account_edit_form_invalid_data(self):
         form = AccountEditForm(instance=self.user, data={
-            'username': self.user2.username,
+            'username': self.user.username.upper(),
             'name': 'maria',
             'bio': 'mari playing',
         })

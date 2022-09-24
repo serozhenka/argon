@@ -2,10 +2,8 @@ import json
 import threading
 
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.http import JsonResponse
-from django.urls import reverse_lazy
 from django.shortcuts import redirect
 
 from .models import Post, PostLike, Comment, CommentLike, PostCreateTask
@@ -18,13 +16,12 @@ from .utils import (
     put_new_image_to_s3,
 )
 
-@login_required(login_url=reverse_lazy('account:login'))
+
 def feed_page(request):
     running_tasks = PostCreateTask.objects.filter(user=request.user).values_list('task_id', flat=True)
     return render(request, 'post/feed.html', {'tasks': running_tasks})
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_add_page(request):
     if request.method == "GET":
         context = {
@@ -65,9 +62,7 @@ def post_add_page(request):
         return redirect('post:feed')
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_page(request, post_id):
-
     if request.method == "GET":
         try:
             post = Post.objects.get(id=post_id)
@@ -81,9 +76,7 @@ def post_page(request, post_id):
         return render(request, 'post/post_page.html', context)
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_edit_page(request, post_id):
-
     try:
         post = Post.objects.get(id=post_id)
     except Post.DoesNotExist:
@@ -103,9 +96,7 @@ def post_edit_page(request, post_id):
         return redirect('post:post-page', post.id)
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_like_page(request, post_id):
-
     if request.method == "GET":
         return redirect('post:feed')
 
@@ -144,9 +135,7 @@ def post_like_page(request, post_id):
         })
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_comment_page(request, post_id):
-
     if request.method == "GET":
         return redirect('post:feed')
 
@@ -172,9 +161,7 @@ def post_comment_page(request, post_id):
             return JsonResponse({'response_result': 'error', 'message': 'No description provided'})
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_comment_like_page(request, comment_id):
-
     if request.method == "GET":
         return redirect('post:feed')
 
@@ -209,9 +196,7 @@ def post_comment_like_page(request, comment_id):
         })
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def post_comment_remove_page(request, comment_id):
-
     if request.method == "GET":
         return redirect('post:feed')
 

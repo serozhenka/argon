@@ -7,6 +7,4 @@ from .models import Account
 @register(Account)
 class AccountIndex(AlgoliaIndex):
     fields = ('username', 'name', 'image_url', 'is_public')
-    settings = {
-        'searchableAttributes': ['username', 'name']
-    }
+    settings = {'searchableAttributes': ['username', 'name']}

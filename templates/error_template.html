@@ -1,11 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="col-10 position-relative mt-5 mx-auto">
-        <img class="img-fluid rounded d-block mx-auto" src="https://d1nslcd7m2225b.cloudfront.net/Pictures/480xAny/7/2/5/1374725_minionsriseofgru_550292.jpg" alt="">
-        <span class="display-6 text-center position-absolute top-50 start-50 text-light p-3 rounded" style="text-shadow: 0 0 3px white; transform: translate(-50%, -50%); background: rgba(33, 37, 41, 0.9)">
-            {% block error_message %} {% endblock error_message %}
-        </span>
+    <div class="col-md-8 col-12 mx-auto position-absolute top-0 w-100" style="height: 100vh">
+        <div class="w-100 h-100 position-relative">
+            <div class="h-100 w-100" style="padding-top: 42px; filter: contrast(0.8)">
+                <div class="h-50 w-100" style="background-color: #2659ac"></div>
+                <div class="h-50 w-100" style="background-color: #f8d447"></div>
+            </div>
+            <div class="position-absolute top-50 start-50 text-light h3 text-center" style="transform: translateX(-50%); mix-blend-mode: exclusion">
+                {% block error_message %} {% endblock error_message %}
+            </div>
+        </div>
     </div>
 
 {% endblock content %}

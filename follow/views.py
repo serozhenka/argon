@@ -1,9 +1,7 @@
 import json
 
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
 
 from .models import Following, FollowingRequest
 from .utils import user_exists_and_is_not_request_user
@@ -13,7 +11,6 @@ from notifications.utils import (
 )
 
 
-@login_required(login_url=reverse_lazy('account:login'))
 def follow_general_view(request, username):
 
     if request.method == "GET":

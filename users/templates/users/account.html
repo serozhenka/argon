@@ -17,7 +17,7 @@
                             <h1 class="fw-light mb-0" style="height: 50px; line-height: 40px">{{ account.username }}</h1>
 
                             {% if request.user == account %}
-                                <a href="{% url 'account:account-edit' username=request.user.username %}" class="btn btn-outline-secondary fs-14px py-1 px-3 disable-focus">
+                                <a href="{% url 'account:account-edit' %}" class="btn btn-outline-secondary fs-14px py-1 px-3 disable-focus">
                                     Edit
                                 </a>
                             {% else %}

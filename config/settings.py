@@ -1,28 +1,25 @@
 import os
+import sys
 
 from decouple import config
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = ["argon-social.herokuapp.com", 'localhost', 'www.argon-social.com', 'argon-social.com']
-
+ALLOWED_HOSTS = [
+    "argon-social.herokuapp.com",
+    'www.argon-social.com',
+    'argon-social.com',
+    'localhost',
+    '127.0.0.1',
+]
 
 # Application definition
 
-INSTALLED_APPS = [
+DEFAULT_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,8 +27,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+]
 
-    # external apps
+EXTERNAL_APPS = [
     'rest_framework',
     'algoliasearch_django',
     'channels',
@@ -39,8 +37,9 @@ INSTALLED_APPS = [
     'django_celery_results',
     'djcelery_email',
     'celery_progress',
+]
 
-    # internal apps
+INTERNAL_APPS = [
     'users.apps.UsersConfig',
     'follow.apps.FollowConfig',
     'api.apps.ApiConfig',
@@ -49,12 +48,15 @@ INSTALLED_APPS = [
     'notifications.apps.NotificationsConfig',
 ]
 
+INSTALLED_APPS = DEFAULT_APPS + EXTERNAL_APPS + INTERNAL_APPS
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'config.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -83,24 +85,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': '5432',
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST'),
+            'PORT': '5432',
+        }
+    }
 
-# Password validation
-# https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -117,9 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -127,8 +129,7 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
+# Static files
 
 USE_S3 = config('USE_S3', cast=bool)
 
@@ -137,15 +138,15 @@ if USE_S3:
     AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
     AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
     AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     # s3 static settings
     AWS_LOCATION = 'static'
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-    PUBLIC_MEDIA_LOCATION = 'media'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+    AWS_MEDIA_LOCATION = 'media'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}/'
     DEFAULT_FILE_STORAGE = 'config.storage_backends.MediaStorage'
 else:
     STATIC_URL = '/static/'
@@ -155,16 +156,12 @@ else:
 
 STATICFILES_DIRS = [BASE_DIR / 'static/', ]
 
-POST_IMAGE_TEMP = 'static/tmp/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.Account'
 
-
+POST_IMAGE_TEMP = 'static/tmp/'
 DEFAULT_PROFILE_IMAGE_FILEPATH = 'profile_images/default.png'
 DEFAULT_POST_IMAGE_FILEPATH = 'post_images/'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10
@@ -197,7 +194,7 @@ REST_FRAMEWORK = {
 }
 
 
-# Algolia search client configuration
+# Algolia Search Client configuration
 ALGOLIA = {
     'APPLICATION_ID': config('ALGOLIA_APPLICATION_ID'),
     'API_KEY': config('ALGOLIA_API_KEY'),
@@ -225,10 +222,20 @@ CSRF_TRUSTED_ORIGINS = [
     'https://argon-social.com',
 ]
 
+
 # Celery configuration
 
 CELERY_BROKER_URL = config('REDIS_URL')
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
 CELERY_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
+
+AUTH_ROUTES = ('register', 'login')
+AUTH_EXEMPT_ROUTES = (
+    'register', 'login',
+    'password_change', 'password_change_done',
+    'password_reset', 'password_reset_done', 'password_reset_confirm', 'password_reset_complete',
+)
+AUTH_REDIRECT = 'post:feed'
+AUTH_LOGIN_ROUTE = 'account:login'
+DEFAULT_REDIRECT_ROUTE = 'post:feed'

@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <form id="account-edit-form" action="{% url 'account:account-edit' username=request.user.username %}" method="POST" enctype="multipart/form-data">
+    <form id="account-edit-form" action="{% url 'account:account-edit' %}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <input class="d-none" type="file" name="image" id="account-image-file-selector" accept=".png, .jpeg, .jpg" onchange="readURL(this)">
@@ -120,17 +120,17 @@
                 "cropY": y,
                 "cropWidth": width,
                 "cropHeight": height,
-                'max_image_x_dimension': 300,
+                'maxDimension': 300,
             }
 
             $.ajax({
               type: "POST",
               dataType: "json",
-              url: "{% url 'account:crop-image' username=request.user.username %}",
+              url: "{% url 'account:crop-image' %}",
               data: requestData,
               timeout: 10 * 1000,
               success: function(data) {
-                if(data.result === "error") {
+                if(data.response_result === "error") {
                   alert(data.exception)
                 }
                 window.location.reload()
@@ -174,7 +174,6 @@
             let confirmBtn = document.getElementById('crop-confirm')
 
             confirmBtn.addEventListener('click', (e) => {
-              // crop image
               displayLoadingSpinner(true)
               cropImage(imageFile, cropX, cropY, cropWidth, cropHeight)
             })

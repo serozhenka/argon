@@ -1,36 +1,35 @@
 import os
-import cv2
-import json
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import user_passes_test, login_required
 from django.core import files
-from django.http import HttpResponse
-from django.shortcuts import render, redirect, reverse
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from enum import Enum
+from django.views import View
+from django.views.generic.base import TemplateView
+from django.views.generic.edit import FormView
+from django.views.generic.detail import DetailView
 
+from .constants import DashboardPages
 from .forms import LoginForm, RegisterForm, AccountEditForm
 from .models import Account
-from .utils import user_exists_and_is_account_owner, save_temp_profile_image_from_base64String
+from .utils import save_temp_profile_image_from_base64String, crop_image_from_url
 from follow.models import Following, Followers, FollowingRequest
-from post.models import Post, PostImage
+from post.models import Post
 
-class DashboardPages(str, Enum):
-    EDIT_PROFILE = 'edit_profile'
-    PASSWORD = 'password_change'
-    PRIVACY_AND_SECURITY = 'privacy_and_security'
 
-@user_passes_test(lambda user: not user.is_authenticated, login_url='/', redirect_field_name=None)
-def login_page(request):
-    context = {
-        'page': 'login',
-    }
-    if request.method == "GET":
-        context['form'] = LoginForm()
-    elif request.method == "POST":
-        form = LoginForm(request.POST)
+class LoginPageView(FormView):
+    form_class = LoginForm
+    template_name = 'users/login_register.html'
+    success_url = reverse_lazy('post:feed')
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form, 'page': 'login'})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
         if form.is_valid():
             user = authenticate(
                 email=form.cleaned_data['email'],
@@ -38,182 +37,170 @@ def login_page(request):
             )
             if user:
                 login(request, user)
-                return redirect('post:feed')
+                return self.form_valid(form)
+        return render(request, self.template_name, {'form': form, 'page': 'login'})
 
-        context['form'] = form
 
-    return render(request, 'users/login_register.html', context=context)
+class RegisterPageView(FormView):
+    form_class = RegisterForm
+    template_name = 'users/login_register.html'
+    success_url = reverse_lazy('post:feed')
 
-@user_passes_test(lambda user: not user.is_authenticated, login_url='/', redirect_field_name=None)
-def register_page(request):
-    context = {
-        'page': 'register',
-    }
-    if request.method == "GET":
-        context['form'] = RegisterForm()
-    elif request.method == "POST":
-        form = RegisterForm(request.POST)
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form, 'page': 'register'})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('post:feed')
+            return self.form_valid(form)
+        return render(request, self.template_name, {'form': form, 'page': 'register'})
 
+
+class LogoutPageView(FormView):
+
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        return redirect(settings.AUTH_LOGIN_ROUTE)
+
+
+class AccountPageView(DetailView):
+    context_object_name = 'account'
+    lookup_url_kwarg = 'username'
+    model = Account
+    template_name = 'users/account.html'
+
+    def get_object(self, queryset=None):
+        queryset = self.get_queryset()
+
+        self.account = get_object_or_404(
+            klass=queryset,
+            **{self.lookup_url_kwarg: self.kwargs.get(self.lookup_url_kwarg)}
+        )
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        user_following_model = Following.objects.get(user=self.request.user)
+        user_followers_model = Followers.objects.get(user=self.request.user)
+
+        if not self.request.user == self.account:
+            incoming_request = FollowingRequest.objects.filter(sender=self.account, receiver=self.request.user)
+            if incoming_request.exists():
+                context['incoming_request'] = incoming_request.is_active
+
+            outgoing_request = FollowingRequest.objects.filter(sender=self.request.user, receiver=self.account)
+            if outgoing_request.exists():
+                context['outgoing_request'] = outgoing_request.is_active
+
+            context['is_following'] = user_following_model.is_following(self.account)
+            context['is_followed'] = user_followers_model.is_follower(self.account)
+
+        context['following_count'] = user_following_model.count()
+        context['followers_count'] = user_followers_model.count()
+        context['account'] = self.account
+        context["posts_count"] = Post.objects.filter(user=self.account, is_posted=True).count()
+
+        return context
+
+
+class AccountEditPageView(FormView):
+    form_class = AccountEditForm
+    template_name = 'users/edit_account.html'
+    success_url = reverse_lazy('account:account-edit')
+
+    def get_context_data(self, **kwargs):
+        return {
+            "account": self.request.user,
+            "page_name": DashboardPages.EDIT_PROFILE,
+            "DATA_UPLOAD_MAX_MEMORY_SIZE": settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
+        }
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        form = self.form_class(instance=self.request.user)
         context['form'] = form
+        return render(request, self.template_name, context)
 
-    return render(request, 'users/login_register.html', context=context)
-
-@login_required(login_url=reverse_lazy('account:login'))
-def logout_page(request):
-    logout(request)
-    return redirect('post:feed')
-
-@login_required(login_url=reverse_lazy('account:login'))
-def account_page(request, username):
-    context = {'page': 'account'}
-    if request.method == "GET":
-        try:
-            account = Account.objects.get(username=username)
-        except Account.DoesNotExist:
-            return redirect('post:feed')
-
-        following_model_account = Following.objects.get(user=account)
-
-        if not request.user == account:
-
-            try:
-                friend_request = FollowingRequest.objects.get(sender=account, receiver=request.user)
-                context['incoming_request'] = friend_request.is_active
-            except FollowingRequest.DoesNotExist:
-                pass
-
-            try:
-                friend_request = FollowingRequest.objects.get(sender=request.user, receiver=account)
-                context['outgoing_request'] = friend_request.is_active
-            except FollowingRequest.DoesNotExist:
-                pass
-
-            following_model_user = Following.objects.get(user=request.user)
-            context['is_following'] = following_model_user.is_following(account)
-            context['is_followed'] = following_model_account.is_following(request.user)
-
-        context['following_count'] = following_model_account.count()
-        context['followers_count'] = Followers.objects.get(user=account).count()
-
-        context["account"] = account
-        context["posts_count"] = Post.objects.filter(user=account, is_posted=True).count()
-        return render(request, 'users/account.html', context=context)
-
-@login_required(login_url=reverse_lazy('account:login'))
-def account_edit_page(request, username):
-    account, passes = user_exists_and_is_account_owner(request, username)
-    if not passes:
-        return redirect('post:feed')
-
-    context = {
-        "account": account,
-        "DATA_UPLOAD_MAX_MEMORY_SIZE": settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
-        "page_name": DashboardPages.EDIT_PROFILE,
-    }
-    if request.method == "GET":
-        form = AccountEditForm(instance=account)
-    elif request.method == "POST":
-        form = AccountEditForm(request.POST, instance=account)
+    def post(self, request, *args, **kwargs):
+        form = AccountEditForm(request.POST, instance=self.request.user)
         if form.is_valid():
             form.save()
+            return self.form_valid(form)
 
-    context['form'] = form
+        context = self.get_context_data(**kwargs)
+        context['form'] = form
+        return render(request, self.template_name, context)
 
-    return render(request, 'users/edit_account.html', context=context)
 
-@login_required(login_url=reverse_lazy('account:login'))
-def privacy_and_security_page(request, username):
-    account, passes = user_exists_and_is_account_owner(request, username)
-    if not passes:
-        return redirect('post:feed')
+class AccountPrivacySecurityView(TemplateView):
+    template_name = 'users/privacy_and_security.html'
 
-    context = {
-        "account": account,
-        "page_name": DashboardPages.PRIVACY_AND_SECURITY,
-    }
+    def get_context_data(self, **kwargs):
+        return {
+            "account": self.request.user,
+            "page_name": DashboardPages.PRIVACY_AND_SECURITY,
+        }
 
-    if request.method == "GET":
-        return render(request, 'users/privacy_and_security.html', context=context)
-    
-@login_required(login_url=reverse_lazy('account:login'))
-def change_user_privacy_status(request, username):
-    account, passes = user_exists_and_is_account_owner(request, username)
-    if not passes:
-        return redirect('post:feed')
 
-    if request.method == "GET":
-        return redirect('account:privacy-security', username=request.user.username)
-    elif request.method == "POST":
+class ChangeUserPrivacyStatusView(View):
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({'response_result': 'error', 'details': 'GET not allowed'})
+
+    def post(self, request, *args, **kwargs):
         is_public = request.POST.get('is_public') == "true"
-        account.is_public = is_public
-        account.save()
-        return HttpResponse(json.dumps({'response_result': 'success'}), content_type='application/json')
-    return HttpResponse(json.dumps({'response_result': 'error'}), content_type='application/json')
+        self.request.user.is_public = is_public
+        self.request.user.save()
+        return JsonResponse({'response_result': 'success'})
 
-@login_required(login_url=reverse_lazy('account:login'))
-def account_followers(request, username):
-    if request.method == "GET":
-        return render(request, 'users/followers.html', context={'account_username': username})
 
-@login_required(login_url=reverse_lazy('account:login'))
-def account_followings(request, username):
-    if request.method == "GET":
-        return render(request, 'users/followings.html', context={'account_username': username})
+class AccountFollowersView(TemplateView):
+    template_name = 'users/followers.html'
 
-@login_required(login_url=reverse_lazy('account:login'))
-def user_search_page(request):
-    if request.method == "GET":
-        return render(request, 'users/user-search.html')
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data()
+        context_data.update({'account_username': self.kwargs.get('username')})
+        return context_data
 
-@login_required(login_url=reverse_lazy('account:login'))
-def crop_image(request, username):
-    account, passes = user_exists_and_is_account_owner(request, username)
-    if not passes:
-        return redirect('post:feed')
 
-    payload = {}
+class AccountFollowingsView(TemplateView):
+    template_name = 'users/followings.html'
 
-    if request.method == "GET":
-        return redirect('post:feed')
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data()
+        context_data.update({'account_username': self.kwargs.get('username')})
+        return context_data
 
-    elif request.method == "POST":
+
+class UserSearchView(TemplateView):
+    template_name = 'users/user-search.html'
+
+
+class CropImageView(View):
+
+    def post(self, request, *args, **kwargs):
         try:
             imageString = request.POST.get('image')
-            url = save_temp_profile_image_from_base64String(imageString, account)
-            img = cv2.imread(url)
+            url = save_temp_profile_image_from_base64String(imageString, self.request.user)
+            crop_image_from_url(
+                url=url,
+                x=int(float(str(request.POST.get("cropX")))),
+                y=int(float(str(request.POST.get("cropY")))),
+                width=int(float(str(request.POST.get("cropWidth")))),
+                height=int(float(str(request.POST.get("cropHeight")))),
+                max_dimension=int(request.POST.get('maxDimension')),
+            )
 
-            cropX = int(float(str(request.POST.get("cropX"))))
-            cropY = int(float(str(request.POST.get("cropY"))))
-            cropWidth = int(float(str(request.POST.get("cropWidth"))))
-            cropHeight = int(float(str(request.POST.get("cropHeight"))))
-
-            cropX = 0 if cropX < 0 else cropX
-            cropY = 0 if cropY < 0 else cropY
-            cropped_image = img[cropY:cropY + cropHeight, cropX:cropX + cropWidth]
-
-            if max_size := int(request.POST.get('max_image_x_dimension')):
-                if cropped_image.shape[0] > max_size:
-                    cropped_image = cv2.resize(cropped_image, (300, 300), interpolation=cv2.INTER_AREA)
-
-            cv2.imwrite(url, cropped_image)
-
-            if settings.DEFAULT_PROFILE_IMAGE_FILEPATH not in account.image.url:
-                account.image.delete(save=False)
-            account.image.save("profile_image.png", files.File(open(url, 'rb')))
-
-            payload['result'] = 'success'
-            payload['cropped_image_url'] = account.image.url
+            if settings.DEFAULT_PROFILE_IMAGE_FILEPATH not in self.request.user.image.url:
+                self.request.user.image.delete(save=False)
+            self.request.user.image.save("profile_image.png", files.File(open(url, 'rb')))
 
             os.remove(url)
-            if os.path.exists(f"{settings.TEMP}/{str(account.pk)}"):
-                os.rmdir(f"{settings.TEMP}/{str(account.pk)}")
+            if os.path.exists(f"{settings.TEMP}/{str(self.request.user.pk)}"):
+                os.rmdir(f"{settings.TEMP}/{str(self.request.user.pk)}")
 
+            return JsonResponse({'response_result': 'success', 'cropped_image_url': self.request.user.image.url})
         except Exception as e:
-            payload['result'] = 'error'
-            payload['exception'] = str(e)
-
-        return HttpResponse(json.dumps(payload), content_type='application/json')
+            return JsonResponse({'response_result': 'error', 'details': str(e)})
